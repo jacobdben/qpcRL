@@ -5,29 +5,25 @@ from scipy.optimize import fmin_l_bfgs_b
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-from qcodes.dataset.data_set import load_by_id
     
 # import my functions
 
 import sys
 sys.path.append('../')
-from pixel_array_sim import pixelarrayQPC
+from simulations.pixel_array_sim import pixelarrayQPC
 from staircasiness import staircasiness
 
-import os.path
-from os import path
 
 # script
 stairs=staircasiness(delta=0.1,last_step=5)
 
 common_voltages=np.linspace(-8,-2,20)
 global_ids=[]
-prefix="Optimization/scipy_results/pixelarrayQPC/"
 
 QPC=pixelarrayQPC(plot=False)
-disorder=True
+disorder=False
 if disorder:
-    QPC.U0=0.5
+    QPC.U0=0.25
 
 def measure(V2,V3,V4,V5,V6,V7,V8,V9,V10):
     QPC.V2=V2
@@ -49,20 +45,24 @@ def measure(V2,V3,V4,V5,V6,V7,V8,V9,V10):
     return results
 
     
-    
+from datahandling import datahandler
+dat=datahandler()
     
 def func_to_minimize(x):
     global global_ids
     # x[0]=V2 , X[1]=tilt
+    
+    # prints every 10 function calls
     if len(global_ids)%10==0:
         print(len(global_ids))
-    fname=prefix+"{:.2f}_{:.2f}_{:.2f}_{:.2f}_{:.2f}_{:.2f}_{:.2f}_{:.2f}.npy".format(x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8])
-    if path.isfile(fname):
-        result=np.load(fname)
-        print("[{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}] - already existing ".format(x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8]))
+        
+    if dat.check_data(x):
+        result=dat.load_data(x)
+        print("[{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}] - already existing ".format(x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7]))
     else:
         result=measure(x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8])
-        np.save(fname,result)
+        dat.save_data(result,x)
+
     res2=stairs.histogram(result)
     res=(res2)
     # print(res)
@@ -115,30 +115,22 @@ def plots2(ids):
     unique_ids=[]
     for x in ids:
         if not str(x) in unique_ids:
-            fname=prefix+"_{:.2f}_{:.2f}_{:.2f}_{:.2f}_{:.2f}_{:.2f}_{:.2f}_{:.2f}.npy".format(x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[7])
-            results.append(np.load(fname))
+            results.append(dat.load_data(x))
             unique_ids.append(str(x))
 
-    # print(unique_ids)
+
     # plot selected staircases 
     scores=[]
     for result in results:
-        # plt.plot(result)
         invscore=stairs.histogram(result)
         scores.append(1/invscore)
         
     plt.figure(2)
-    # plt.plot(results[np.argmin(scores)],label='best')
-    print(np.argmin(scores))
-    print(converter(unique_ids[np.argmin(scores)]))
-    # plt.plot(results[np.argmax(scores)],label='worst')
-
     plt.xlabel("Outer Gates [V]")
     plt.ylabel('Conductance')
-    plt.text(-3,1.2,"{:.2f}".format(scoreshist[0]),fontsize=18)
-    plt.text(-4.1,3.5,"{:.2f}".format(scoreshist[1]),fontsize=18)
-    for binline in hej.bins:
-        plt.plot([-8,-2],[binline,binline],'k--',alpha=0.5)
+
+    for binline in stairs.bins:
+        plt.plot([np.min(common_voltages),np.max(common_voltages)],[binline,binline],'k--',alpha=0.5)
     plt.plot(common_voltages,results[0],label='Start')
     plt.plot(common_voltages,results[-1],label='Finish')
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')

@@ -45,6 +45,7 @@ def make_gauss_fit(staircase,plateau,plot=False):
 
 class staircasiness():
     def __init__(self,delta=0.05,last_step=4,favorite=100):
+        self.delta=delta
         self.bins=[]
         self.last_step=last_step
         if isinstance(favorite,int):
@@ -52,6 +53,8 @@ class staircasiness():
         self.favorite=favorite
         for i in range(last_step):
             self.bins.extend([i+1-delta,1+i+delta])
+            
+        self.arange=np.arange(1,last_step)
             
     def histogram(self,staircase):
                    
@@ -69,9 +72,32 @@ class staircasiness():
             score+=make_gauss_fit(staircase,plateau,plot=True)
         return 1/score
     
+    def step_loss(self,last_transmission,transmission):
+        indexs=np.digitize(np.array([last_transmission,transmission]),self.bins)
+        # print(indexs)
+        if indexs[0]%2==1:
+            if indexs[1]==indexs[0]:
+                # print("same")
+                return abs(np.round(last_transmission)-transmission)
 
+            elif indexs[1]>=indexs[0]:
+                # print("above")
+                return abs((np.round(last_transmission)+1-transmission))
+            
+            else:
+                # print("below")
+                return 10
+        else:
+            ceil=np.ceil(last_transmission)
+            if transmission>=(ceil+self.delta):
+                return 10
+            else:
+                return abs(ceil-transmission)
+
+            
     
 
+    
 
 
 
@@ -93,16 +119,27 @@ if __name__=="__main__":
     # fname=plot_nearest(x[0],x[1])
     # staircase=np.load(fname)
     staircase=y
-    t=staircasiness(last_step=int(np.ceil(np.max(staircase))))
+    t=staircasiness(delta=0.1,last_step=int(np.ceil(np.max(staircase))))
     test = t.histogram(staircase)
     test2= t.gaussian_fit(staircase)
 
-    plt.figure()
-    for binline in t.bins:
-        plt.plot([0,len(staircase)],[binline,binline],'k--',alpha=0.5)
-    plt.plot(staircase,'-*')
-    plt.xticks([])
-    plt.yticks([1,2,3,4],['1','2','3','4'])
-    plt.title("histogram={:.2f}, Gaussian fit={:.2f}".format(test,test2))
+    # results=[]
+    # for i in np.arange(0,len(y)-1):
+    #     results.append(t.step_loss(reee[i], reee[i+1]))
+
+    # plt.figure()
+    # plt.plot(results,'*')
+    # plt.plot(reee,'*')
+    
+    # print(t.step_loss(1, 0.9))
+    plot=False
+    if plot:
+        plt.figure()
+        for binline in t.bins:
+            plt.plot([0,len(staircase)],[binline,binline],'k--',alpha=0.5)
+        plt.plot(staircase,'-*')
+        plt.xticks([])
+        plt.yticks([1,2,3,4],['1','2','3','4'])
+        plt.title("histogram={:.2f}, Gaussian fit={:.2f}".format(test,test2))
     # plt.savefig('Optimization/staircase_for_2_optimizations.png')
               # ,fontdict={'color':'blue','size':16})

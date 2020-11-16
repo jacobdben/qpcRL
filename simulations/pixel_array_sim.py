@@ -185,7 +185,7 @@ class pixelarrayQPC():
 
 if( __name__ == "__main__" ):
     test=pixelarrayQPC(plot=True)
-    test.U0=0.5
+    # test.U0=0.5
     test.set_all_pixels(0)
     import time
     def measure(start,stop,numpoints):
@@ -197,9 +197,22 @@ if( __name__ == "__main__" ):
             test.V1=i
             result.append(test.transmission())
         plt.plot(sweep,result)
+        
+    def measure2(start,stop,numpoints):
+        test.V1=-3
+        test.V2=-3
+        plt.figure()
+        result=[]
+        sweep=np.linspace(start,stop,numpoints)
+        for i in sweep:
+            test.set_all_pixels(i)
+            result.append(test.transmission())
+        plt.plot(sweep,result)
+        return result
 
     
     start_time=time.perf_counter()  
-    measure(-8,-2,30)
+    # measure(-8,-2,30)
+    reee=measure2(-2,0,20)
     stop_time=time.perf_counter()
-    print("time spent minimizing: {:.2f}".format(stop_time-start_time))
+    print("time spent: {:.2f}".format(stop_time-start_time))

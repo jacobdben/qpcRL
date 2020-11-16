@@ -21,6 +21,7 @@ common_voltages=np.linspace(-8,-2,20)
 global_ids=[]
 
 QPC=pixelarrayQPC(plot=False)
+
 disorder=False
 if disorder:
     QPC.U0=0.25

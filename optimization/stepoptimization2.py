@@ -22,12 +22,12 @@ stairs=staircasiness(delta=0.1,last_step=5)
 
 common_voltages=np.linspace(-1.5,0,20)
 QPC=pixelarrayQPC(plot=False)
-QPC.V1=-3
-QPC.V11=-3
+QPC.V1=-1.5
+QPC.V11=-1.5
 
-disorder=False
+disorder=True
 if disorder:
-    QPC.U0=0.25
+    QPC.U0=0.5
     
 dat=datahandler(qpctype="pixelarrayQPC/stepopt")
 file_names=dat.get_file_names()
@@ -83,7 +83,8 @@ for i in range(len(common_voltages)):
         
         
     elif i==1:
-        result=minimize(fun=func_to_minimize,x0=start,method="trust-constr", constraints=constraint,bounds=bounds,options={'finite_diff_rel_step':0.01,'maxiter':10})
+        # result=minimize(fun=func_to_minimize,x0=start,method="trust-constr", constraints=constraint,bounds=bounds,options={'finite_diff_rel_step':0.01,'maxiter':30})
+        result=minimize(fun=func_to_minimize,x0=start,method="SLSQP", constraints=[{'type':'eq','fun':lambda x: np.sum(x)/9-average_voltage}],bounds=bounds,options={'eps':0.01,'maxiter':5})
         last_trans=measure(result.x)
 
         results['x'].append(result.x)
@@ -92,7 +93,8 @@ for i in range(len(common_voltages)):
         results['optimizationresults'].append(result)
         
     else:
-        result=minimize(fun=func_to_minimize,x0=result.x,method="trust-constr", constraints=constraint,bounds=bounds,options={'finite_diff_rel_step':0.01,'maxiter':10})
+        # result=minimize(fun=func_to_minimize,x0=result.x,method="trust-constr", constraints=constraint,bounds=bounds,options={'finite_diff_rel_step':0.01,'maxiter':30})
+        result=minimize(fun=func_to_minimize,x0=result.x,method="SLSQP", constraints=[{'type':'eq','fun':lambda x: np.sum(x)/9-average_voltage}],bounds=bounds,options={'eps':0.01,'maxiter':5})
         last_trans=measure(result.x)
 
         results['x'].append(result.x)
@@ -111,22 +113,30 @@ for i in range(len(common_voltages)):
 stop_time=time.perf_counter()
 print("total time spent optimizing: {:.1f}".format(stop_time-start_time))
 # fig,(ax1,ax2)=plt.subplots(2,1)
+basic=[]
+for V in common_voltages:
+    basic.append(measure(V*np.ones(9)))
 fig,ax1=plt.subplots()
-ax1.plot(common_voltages,results['trans'])
+ax1.plot(common_voltages,basic,label="Non Optimized")
+ax1.plot(common_voltages,results['trans'],label="Optimized")
 ax1.set_ylabel("Conductance")
 ax1.set_xlabel("Avg Pixel Voltage [V]")
 ax1.plot(common_voltages,results['trans'],'r*')
 ax1.grid('on')
-plt.savefig('pixelstepoptimization.png')
+ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.savefig('pixelstepoptimizationDISORDER5.png')
 
 
         
 save_results=True
 if save_results:
-    dat.save_dict(results,"pixelstepopt")
+    dat.save_dict(results,"pixelstepoptDISORDER5")
     
-plot=False
+plot=True
+save_plot=True
 if plot:
+
+        
     num=0
     for x in results['x']:
         plt.figure()
@@ -138,11 +148,32 @@ if plot:
         plt.xticks(ticks=[])
         plt.yticks(ticks=[])
         plt.colorbar()
-        plt.savefig('figures/gif/{}.png'.format(num))
+        if save_plot:
+            plt.savefig('optimization/figures/gifDISORDER5/{}.png'.format(num))
         num+=1
         
         
         
+    
+def plot_dict(dictname):
+    results=dat.load_dict(dictname)
+    common_voltages=[]
+    for i in range(len(results['x'])):
+        common_voltages.append(sum(results['x'][i])/9)
+        
+        
+    basic=[]
+    for V in common_voltages:
+        basic.append(measure(V*np.ones(9)))
+    fig,ax1=plt.subplots()
+    ax1.plot(common_voltages,basic,label="Non Optimized")
+    ax1.plot(common_voltages,results['trans'],label="Optimized")
+    ax1.set_ylabel("Conductance")
+    ax1.set_xlabel("Avg Pixel Voltage [V]")
+    ax1.plot(common_voltages,results['trans'],'r*')
+    ax1.grid('on')
+    ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+
     
     
     

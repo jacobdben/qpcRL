@@ -6,5 +6,5 @@ save_non_project_files = False
 
 [main]
 version = 0.2.0
-recent_files = ['datahandling.py', 'staircasiness.py', 'optimization\\pixelarrayopt.py', 'simulations\\pixel_array_sim.py', 'optimization\\stepoptimization2.py']
+recent_files = ['staircasiness.py', 'optimization\\pixelarrayopt.py', 'optimization\\stepoptimization2.py', 'simulations\\pixel_array_sim_2.py', 'optimization\\small_pixel_array_stepoptimization.py', 'datahandling.py']
 

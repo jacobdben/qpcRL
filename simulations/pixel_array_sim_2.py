@@ -29,43 +29,48 @@ def rectangular_gate_pot(dims):
     return func
 
 
-gate1dims=[5, 50, 70, -5, 27.5]
+def make_gates(distance_to_gate=5,left=30,right=50,spacing=2.5,W=80,L=80):
+    pixel_size=(right-left-2*spacing)/3
+    array_size=3*pixel_size+2*spacing
+    
+    center=(W/2,L/2)
+    
+    gate1dims=[distance_to_gate,left,right,0,center[0]-array_size/2-spacing]
+    gate11dims=[distance_to_gate,left,right,center[0]+array_size/2+spacing,W]
+    
+    bottom_of_array=center[0]-array_size/2
+    gates=[gate1dims]
+    for i in range(3):
+        for j in range(3):
+            gates.append([distance_to_gate,
+                           left+j*(pixel_size+spacing),
+                           left+j*(pixel_size+spacing)+pixel_size,
+                           bottom_of_array+i*(pixel_size+spacing),
+                           bottom_of_array+i*(pixel_size+spacing)+pixel_size])
+    gates.append(gate11dims)
+    return gates
+    
+W=70
+L=60
+allgatedims=make_gates(left=20,right=40,W=W,L=L,spacing=2)
 
-gate2dims=[5, 50, 55, 30, 35]
-gate3dims=[5, 57.5, 62.5, 30, 35]
-gate4dims=[5, 65, 70, 30, 35]
 
-gate5dims=[5, 50, 55, 37.5, 42.5]
-gate6dims=[5, 57.5, 62.5, 37.5, 42.5]
-gate7dims=[5, 65, 70, 37.5, 42.5]
-
-gate8dims=[5, 50, 55, 45, 50]
-gate9dims=[5, 57.5, 62.5, 45, 50]
-gate10dims=[5, 65, 70, 45, 50]
-
-gate11dims=[5, 50, 70, 52.5, 85]
-
-
-
-
-
-
-allgatedims=[gate1dims,gate2dims,gate3dims,gate4dims,gate5dims,gate6dims,gate7dims,gate8dims,gate9dims,gate10dims,gate11dims]
+# allgatedims=[gate1dims,gate2dims,gate3dims,gate4dims,gate5dims,gate6dims,gate7dims,gate8dims,gate9dims,gate10dims,gate11dims]
 
 #gate 1 and 11 are the outer gates, 2-10 are the pixel array
-_gate1 = rectangular_gate_pot(gate1dims) 
+_gate1 = rectangular_gate_pot(allgatedims[0]) 
 
-_gate2 = rectangular_gate_pot(gate2dims)
-_gate3 = rectangular_gate_pot(gate3dims) 
-_gate4 = rectangular_gate_pot(gate4dims)
-_gate5 = rectangular_gate_pot(gate5dims)
-_gate6 = rectangular_gate_pot(gate6dims) 
-_gate7 = rectangular_gate_pot(gate7dims)
-_gate8 = rectangular_gate_pot(gate8dims)
-_gate9 = rectangular_gate_pot(gate9dims) 
-_gate10 = rectangular_gate_pot(gate10dims)
+_gate2 = rectangular_gate_pot(allgatedims[1])
+_gate3 = rectangular_gate_pot(allgatedims[2]) 
+_gate4 = rectangular_gate_pot(allgatedims[3])
+_gate5 = rectangular_gate_pot(allgatedims[4])
+_gate6 = rectangular_gate_pot(allgatedims[5]) 
+_gate7 = rectangular_gate_pot(allgatedims[6])
+_gate8 = rectangular_gate_pot(allgatedims[7])
+_gate9 = rectangular_gate_pot(allgatedims[8]) 
+_gate10 = rectangular_gate_pot(allgatedims[9])
 
-_gate11 = rectangular_gate_pot(gate11dims)
+_gate11 = rectangular_gate_pot(allgatedims[10])
 
 
 
@@ -86,7 +91,7 @@ def hopping(site_i, site_j, phi):
 
 
 class pixelarrayQPC():
-    def __init__(self,W=80,L=120,plot=False):
+    def __init__(self,W=W,L=L,plot=False):
         #------------------------------------------------------------------------------
         # Set up KWANT basics
         # Parameters are:
@@ -103,7 +108,7 @@ class pixelarrayQPC():
         self.phi=0
         self.salt=13
         self.U0=0
-        self.energy=0.5
+        self.energy=1
         self.t=1
         
         
@@ -171,9 +176,8 @@ class pixelarrayQPC():
         smatrix = kwant.smatrix(self.fqpc, self.energy, params=Params)
         return smatrix.transmission(1,0)  
    
-    def plot_potential(self):
-        kwant.plotter.map(self.qpc, lambda s: 4*self.t-qpc_potential(s, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11) \
-                          +disorder(s,self.U0,self.salt))
+    def plot_potential(self,ax=None):
+        kwant.plotter.map(self.qpc, lambda s: 4*self.t-qpc_potential(s, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11)+disorder(s,self.U0,self.salt),cmap='seismic', oversampling=1,ax=ax)
 
     
     def set_all_pixels(self,val):
@@ -189,10 +193,11 @@ class pixelarrayQPC():
     
 
 if( __name__ == "__main__" ):
-    test=pixelarrayQPC(plot=True)
+    test=pixelarrayQPC(W=W,L=L,plot=True)
     test.U0=0.5
-    test.V1=-2
-    test.V11=-2
+    test.energy=1
+    test.V1=-3
+    test.V11=-3
     test.set_all_pixels(-1)
     test.plot_potential()
     
@@ -219,15 +224,15 @@ if( __name__ == "__main__" ):
             test.set_all_pixels(i)
             result.append(test.transmission())
         # plt.plot(sweep,result)
-        return result
+        return result,sweep
 
     
     start_time=time.perf_counter()  
     # measure(-8,-2,30)
-    test.U0=0
-    testresult=measure2(-1.5,0,20)
-    plt.plot(testresult,'*')
-    plt.plot(testresult)
+    # test.U0=0.5
+    testresult,sweep=measure2(-2.5,0,50)
+    plt.plot(sweep,testresult,'*')
+    plt.plot(sweep,testresult)
     plt.grid('on')
     stop_time=time.perf_counter()
     print("time spent: {:.2f}".format(stop_time-start_time))

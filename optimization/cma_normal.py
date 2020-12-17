@@ -69,7 +69,7 @@ def folder_name():
     newfolder=data_path+'outcmaes/'+'{}/'.format(max(lis)+1)
     return newfolder
 newfolder=folder_name()
-x,es=cma.fmin2(func_to_minimize,np.zeros(9),0.5,options={'maxfevals':10,'verb_filenameprefix':newfolder})
+x,es=cma.fmin2(func_to_minimize,np.zeros(9),0.5,options={'maxfevals':300,'verb_filenameprefix':newfolder})
 dat.save_datahandler()
 
 

@@ -6,6 +6,8 @@ from cmath import exp
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
+from simulations.new_disorder import make_disorder
+from types import SimpleNamespace
 
 def rectangular_gate_pot(dims):
     """Compute the potential of a rectangular gate.
@@ -81,7 +83,14 @@ def qpc_potential(site, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11):
            _gate5(x, y, V5) + _gate6(x, y, V6) + _gate7(x, y, V7) + _gate8(x,y,V8) + \
            _gate9(x, y, V9) + _gate10(x, y, V10) + _gate11(x, y, V11) 
 
-def disorder(site, U0, salt):
+disorder_values=make_disorder(L, W, length_scale=5).T
+# print(disorder_values)
+def disorder(site,U0):
+    x,y=site.tag
+    # print(x,y)
+    return disorder_values[x,y]*U0
+    
+def disorder_old(site, U0, salt=13):
     return  U0 * (uniform(repr(site), repr(salt)) - 0.5)
 
 def hopping(site_i, site_j, phi):
@@ -137,7 +146,7 @@ class pixelarrayQPC():
         def make_barrier(pot,dis, W=W, L=L, t=1):
             def onsite(s, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, U0, salt, t):
 
-                return 4 * t - pot(s,V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11) + dis(s, U0, salt)
+                return 4 * t - pot(s,V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11) + dis(s, U0)
             # Construct the scattering region.
             sr = kwant.Builder()
             sr[(lat(x, y) for x in range(L) for y in range(W))] = onsite 
@@ -168,7 +177,7 @@ class pixelarrayQPC():
             ylims=ax.get_ylim()
             
             kwant.plotter.map(self.qpc, lambda s: 4*self.t-qpc_potential(s, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11) \
-                          +disorder(s,self.U0,self.salt))
+                          +disorder(s,self.U0))
         self.fqpc = self.qpc.finalized()
     
     def transmission(self):
@@ -177,28 +186,54 @@ class pixelarrayQPC():
         return smatrix.transmission(1,0)  
    
     def plot_potential(self,ax=None):
-        kwant.plotter.map(self.qpc, lambda s: 4*self.t-qpc_potential(s, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11)+disorder(s,self.U0,self.salt),cmap='seismic', oversampling=1,ax=ax)
-
+        kwant.plotter.map(self.qpc, lambda s: 4*self.t-qpc_potential(s, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11)+disorder(s,self.U0), oversampling=1,ax=ax)
+    
+    def plot_potential_section(self,bounds=((19,41),(25,45)),ax=None):
+        if ax is None:
+            fig,ax=plt.subplots()
+        vals=np.zeros([bounds[0][1]-bounds[0][0],bounds[1][1]-bounds[1][0]])
+        i=0
+        for x in np.arange(bounds[0][0],bounds[0][1]):
+            j=0
+            for y in np.arange(bounds[1][0],bounds[1][1]):
+                site=SimpleNamespace(tag=(x,y),pos=(x,y))
+                vals[i,j]=4*self.t-qpc_potential(site, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11)+disorder(site,self.U0)
+                j+=1
+            i+=1
+        h=ax.imshow(vals.T,origin='lower',extent=(bounds[0][0],bounds[0][1],bounds[1][0],bounds[1][1]))
+        # plt.colorbar()
+        return vals,h
     
     def set_all_pixels(self,val):
-        self.V2=val
-        self.V3=val
-        self.V4=val
-        self.V5=val
-        self.V6=val
-        self.V7=val
-        self.V8=val
-        self.V9=val
-        self.V10=val
+        if isinstance(val,float):
+            self.V2=val
+            self.V3=val
+            self.V4=val
+            self.V5=val
+            self.V6=val
+            self.V7=val
+            self.V8=val
+            self.V9=val
+            self.V10=val
+        elif isinstance(val,np.ndarray):
+            self.V2=val[0]
+            self.V3=val[1]
+            self.V4=val[2]
+            self.V5=val[3]
+            self.V6=val[4]
+            self.V7=val[5]
+            self.V8=val[6]
+            self.V9=val[7]
+            self.V10=val[8]
     
 
 if( __name__ == "__main__" ):
     test=pixelarrayQPC(W=W,L=L,plot=True)
-    test.U0=0.5
+    test.U0=0.05
     test.energy=1
-    test.V1=-3
-    test.V11=-3
-    test.set_all_pixels(-1)
+    # test.V1=-3
+    # test.V11=-3
+    test.set_all_pixels(0)
     test.plot_potential()
     
     
@@ -215,8 +250,8 @@ if( __name__ == "__main__" ):
         plt.plot(sweep,result)
         
     def measure2(start,stop,numpoints):
-        test.V1=-3
-        test.V11=-3
+        test.V1=-4
+        test.V11=-4
         # plt.figure()
         result=[]
         sweep=np.linspace(start,stop,numpoints)
@@ -229,10 +264,10 @@ if( __name__ == "__main__" ):
     
     start_time=time.perf_counter()  
     # measure(-8,-2,30)
-    # test.U0=0.5
-    testresult,sweep=measure2(-2.5,0,50)
-    plt.plot(sweep,testresult,'*')
-    plt.plot(sweep,testresult)
-    plt.grid('on')
+    test.U0=0.05
+    # testresult,sweep=measure2(-2,0,30)
+    # plt.plot(sweep,testresult,'*')
+    # plt.plot(sweep,testresult)
+    # plt.grid('on')
     stop_time=time.perf_counter()
     print("time spent: {:.2f}".format(stop_time-start_time))

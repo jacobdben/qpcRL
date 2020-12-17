@@ -132,7 +132,7 @@ if __name__=="__main__":
     # plt.plot(reee,'*')
     
     # print(t.step_loss(1, 0.9))
-    plot=False
+    plot=True
     if plot:
         plt.figure()
         for binline in t.bins:

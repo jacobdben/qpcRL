@@ -150,10 +150,12 @@ def plot_potentials():
         cbar_ax.set_xlabel('')
         cbar_ax.set_ylabel('Arbitrary Energy Units')
         h.set_ticks([])
-        # plt.savefig("C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/figures/Disorder_comparison/{}".format(i))
+        plt.savefig("C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/figures/Disorder_comparison/{}".format(i))
     
         
         
+        # 
+        # 
         # 
         # 
         # 
@@ -163,7 +165,7 @@ def plot_potentials():
         ax1=axes[0]
         QPC.U0=0
 
-        setstep(exp1dict['x'][i],QPC)
+        setstep(np.ones(9)*common_voltages[i],QPC)
         QPC.plot_potential(ax1)
         ax1.set_xticks([])
         ax1.set_yticks([])
@@ -172,7 +174,7 @@ def plot_potentials():
         
         ax2=axes[1]
         QPC.U0=0.5
-        setstep(exp2dict['x'][i],QPC)
+        setstep(np.ones(9)*common_voltages[i],QPC)
         QPC.plot_potential(ax2)
         # ax2.set_title('with')
         ax2.set_xticks([])
@@ -191,6 +193,8 @@ def plot_potentials():
         cbar_ax.set_xlabel('')
         cbar_ax.set_ylabel('Arbitrary Energy Units')
         h.set_ticks([])
+        plt.savefig("C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/figures/Disorder_comparison_non_optimized/{}".format(i))
+    
         
     
 

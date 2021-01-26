@@ -10,7 +10,7 @@ import time
 
 import sys
 sys.path.append('../')
-from simulations.pixel_array_sim import pixelarrayQPC
+from simulations.pixel_array_sim_2 import pixelarrayQPC
 from staircasiness import staircasiness
 
 

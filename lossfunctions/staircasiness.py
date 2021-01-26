@@ -19,9 +19,9 @@ def make_gauss_fit(staircase,plateau,plot=False):
     y=invdist_to_plateau(staircase, plateau)
     x=np.arange(len(y))
     
-    n = len(x)                          #the number of data
-    mean = sum(x*y)/n                   #note this correction
-    sigma = sum(y*(x-mean)**2)/n        #note this correction
+    n = len(x)                          
+    mean = sum(x*y)/n                   
+    sigma = sum(y*(x-mean)**2)/n        
     
     def gaus(x,a,x0,sigma):
         return a*np.exp(-(x-x0)**2/(2*sigma**2))
@@ -44,7 +44,7 @@ def make_gauss_fit(staircase,plateau,plot=False):
 
 
 class staircasiness():
-    def __init__(self,delta=0.05,last_step=4,favorite=100):
+    def __init__(self,delta=0.05,last_step=20,favorite=100):
         self.delta=delta
         self.bins=[]
         self.last_step=last_step

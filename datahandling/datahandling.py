@@ -4,7 +4,7 @@ import pickle
 
 
 save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data"
-
+# save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/Simulation"
 Vs=['V%i'%i for i in range(1,12)]
 parameters=['phi','salt','U0','energy','t']
 parameters.extend(Vs)
@@ -26,13 +26,45 @@ def load_optimization_dict(name):
     file.close
     return output
 
+def load_cma_output(data_path=None,run_number=None):
+    """
+    Parameters
+    ----------
+    data_path : path to, but not including, outcmaes directory, if not provided will default to save_data_path
+    run_number : The number of the run, integer. if None provided, will return latest run
+
+    Returns
+    -------
+    numpy array
+        best fitness in iteration, sorted by iteration
+    numpy array
+        best solution in iteration, sorted by iteration
+
+    """
+    
+    if data_path==None:
+        path=save_data_path
+    else:
+        path=data_path
+        
+    if run_number==None:
+        folders=list(os.walk(path+"/outcmaes/"))[0][1]
+        folders_as_int=[int(f) for f in folders]
+        latest_run=max(folders_as_int)
+        path+='/outcmaes/{}/'.format(latest_run)
+        
+    else:
+        path+='/outcmaes/{}/'.format(run_number)
+    xs=np.loadtxt(path+"xrecentbest.dat",skiprows=1)
+    return xs[:,4],xs[:,5:]
+
 class datahandler():
     def __init__(self,experiment_name,QPC=None,data_path=save_data_path):
         
         self.data_path=data_path+'/'
         self.fname=experiment_name+".pkl"
         
-        if self.fname in list(os.walk(self.data_path+"/"))[0][2]:
+        if self.fname in list(os.walk(self.data_path))[0][2]:
             self.dict=self.load_dict()
             if QPC!=None:
                 for key in parameters:

@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
 
 
-W=70
-L=60
 def make_disorder(L,W,length_scale):
     np.random.seed(2)
     xs=np.arange(start=np.floor(length_scale/2),stop=L,step=length_scale)
@@ -24,6 +22,8 @@ def make_disorder(L,W,length_scale):
     return np.nan_to_num(disorder_int)
 
 if __name__=="__main__":
+    W=70
+    L=60
     dis=make_disorder(L,W,5)*0.1
     plt.figure()
     plt.imshow(dis,origin='lower')

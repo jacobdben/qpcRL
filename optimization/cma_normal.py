@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 import time
 import os
 # import my functions
-import sys
-sys.path.append('../')
+# import sys
+# sys.path.append("../")
 from simulations.pixel_array_sim_2 import pixelarrayQPC
 from staircasiness import staircasiness
 from datahandling import datahandler, save_optimization_dict
@@ -22,6 +22,7 @@ stop=0
 steps=30
 disorder=0.1
 outer_gates=-4
+pfactor=0.001
 
 stairs=staircasiness(delta=0.05,last_step=20)
 common_voltages=np.linspace(start,stop,steps)
@@ -33,14 +34,14 @@ QPC.U0=disorder
 QPC.V1=outer_gates
 QPC.V11=outer_gates
 
-dat=datahandler(experiment_name='cma-es2',QPC=QPC)
+dat=datahandler(experiment_name='cma-es3',QPC=QPC)
 
-pfactor=0.001
+
 data_path=dat.data_path
 counter={'new':0,'loaded':0}
 def func_to_minimize(x):
-    # find_closest_feasible_box(x0,-1,1,True)
-    x,penalty=new_point(x)
+    # new_point ensures points are valid within bounds and constraints.
+    x,penalty=new_point(x,bounds=(-0.5,0.5))
     
     result=[]
     for avg_gates in common_voltages:
@@ -63,21 +64,28 @@ def func_to_minimize(x):
     # plt.plot(result)
     return pfactor*penalty+stairs.histogram(result)
 def folder_name():
+    if not os.path.exists(data_path+"outcmaes"):
+        os.mkdir(data_path+"outcmaes")
     folders=[x[1] for x in os.walk(data_path+"outcmaes/")]
     lis=[int(f) for f in folders[0]]
     lis.append(0)
     newfolder=data_path+'outcmaes/'+'{}/'.format(max(lis)+1)
     return newfolder
+
 newfolder=folder_name()
-x,es=cma.fmin2(func_to_minimize,np.zeros(9),0.5,options={'maxfevals':300,'verb_filenameprefix':newfolder})
+x,es=cma.fmin2(func_to_minimize,np.zeros(9),0.5,options={'maxfevals':20,'verb_filenameprefix':newfolder})
 dat.save_datahandler()
 
 
-
+# x2=es.best.x
+print(x)
+# print(x2)
 plot=False
 if plot:
-    x,p=new_point(x)
+    x,p=new_point(x,bounds=(-0.5,0.5))
+    
     print("result had penalty: {}".format(p))
+    print(x)
     result=[]
     baseline=[]
     plt.figure()
@@ -94,6 +102,7 @@ if plot:
 
     plt.xlabel('Avg Voltage [V]')
     plt.ylabel('Conductance')
+    plt.grid()
     plt.legend()
     
     

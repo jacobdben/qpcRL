@@ -188,7 +188,7 @@ class pixelarrayQPC():
     def plot_potential(self,ax=None):
         kwant.plotter.map(self.qpc, lambda s: 4*self.t-qpc_potential(s, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11)+disorder(s,self.U0), oversampling=1,ax=ax)
     
-    def plot_potential_section(self,bounds=((19,41),(25,45)),ax=None):
+    def plot_potential_section(self,bounds=((0,L),(0,W)),ax=None):
         if ax is None:
             fig,ax=plt.subplots()
         vals=np.zeros([bounds[0][1]-bounds[0][0],bounds[1][1]-bounds[1][0]])

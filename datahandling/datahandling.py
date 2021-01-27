@@ -59,9 +59,13 @@ def load_cma_output(data_path=None,run_number=None):
     return xs[:,4],xs[:,5:]
 
 class datahandler():
-    def __init__(self,experiment_name,QPC=None,data_path=save_data_path):
+    def __init__(self,experiment_name,QPC=None,data_path=None):
         
-        self.data_path=data_path+'/'
+        if data_path==None:
+            self.data_path=save_data_path+'/'
+        else:
+            self.data_path=data_path+'/'
+            
         self.fname=experiment_name+".pkl"
         
         if self.fname in list(os.walk(self.data_path))[0][2]:

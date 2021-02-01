@@ -6,7 +6,7 @@ from cmath import exp
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
-from simulations.new_disorder import make_disorder
+from simulations.new_disorder import make_disorder, make_pixel_disorder
 from types import SimpleNamespace
 
 def rectangular_gate_pot(dims):
@@ -85,10 +85,17 @@ def qpc_potential(site, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11):
 
 disorder_values=make_disorder(L, W, length_scale=5).T
 # print(disorder_values)
+pixel_disorder_values=make_pixel_disorder(L,W,allgatedims[1:10])
+
 def disorder(site,U0):
     x,y=site.tag
     # print(x,y)
     return disorder_values[x,y]*U0
+
+def pixel_disorder(site,U0):
+    x,y=site.tag
+    # print(x,y)
+    return pixel_disorder_values[x,y]*U0
     
 def disorder_old(site, U0, salt=13):
     return  U0 * (uniform(repr(site), repr(salt)) - 0.5)
@@ -100,7 +107,7 @@ def hopping(site_i, site_j, phi):
 
 
 class pixelarrayQPC():
-    def __init__(self,W=W,L=L,plot=False):
+    def __init__(self,W=W,L=L,plot=False,disorder_type='regular'):
         #------------------------------------------------------------------------------
         # Set up KWANT basics
         # Parameters are:
@@ -160,7 +167,11 @@ class pixelarrayQPC():
 
             return sr
         
-        self.qpc = make_barrier(qpc_potential,disorder,t=self.t)
+        if disorder_type=='pixel':
+            self.disorder_func=pixel_disorder
+        else:
+            self.disorder_func=disorder
+        self.qpc = make_barrier(qpc_potential,self.disorder_func,t=self.t)
         # Plotting the gates and sites/leads and potential
         if plot:
             fig,ax=plt.subplots()
@@ -177,7 +188,7 @@ class pixelarrayQPC():
             ylims=ax.get_ylim()
             
             kwant.plotter.map(self.qpc, lambda s: 4*self.t-qpc_potential(s, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11) \
-                          +disorder(s,self.U0))
+                          +self.disorder_func(s,self.U0))
         self.fqpc = self.qpc.finalized()
     
     def transmission(self):
@@ -186,7 +197,7 @@ class pixelarrayQPC():
         return smatrix.transmission(1,0)  
    
     def plot_potential(self,ax=None):
-        kwant.plotter.map(self.qpc, lambda s: 4*self.t-qpc_potential(s, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11)+disorder(s,self.U0), oversampling=1,ax=ax)
+        kwant.plotter.map(self.qpc, lambda s: 4*self.t-qpc_potential(s, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11)+self.disorder_func(s,self.U0), oversampling=1,ax=ax)
     
     def plot_potential_section(self,bounds=((0,L),(0,W)),ax=None):
         if ax is None:
@@ -197,7 +208,7 @@ class pixelarrayQPC():
             j=0
             for y in np.arange(bounds[1][0],bounds[1][1]):
                 site=SimpleNamespace(tag=(x,y),pos=(x,y))
-                vals[i,j]=4*self.t-qpc_potential(site, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11)+disorder(site,self.U0)
+                vals[i,j]=4*self.t-qpc_potential(site, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11)+self.disorder_func(site,self.U0)
                 j+=1
             i+=1
         h=ax.imshow(vals.T,origin='lower',extent=(bounds[0][0],bounds[0][1],bounds[1][0],bounds[1][1]))
@@ -228,16 +239,17 @@ class pixelarrayQPC():
     
 
 if( __name__ == "__main__" ):
-    test=pixelarrayQPC(W=W,L=L,plot=True)
-    test.U0=0.05
+    test=pixelarrayQPC(W=W,L=L,plot=False,disorder_type='regular')
+    test.U0=0.1
+    test.phi=0.1
     test.energy=1
-    # test.V1=-3
-    # test.V11=-3
+    test.V1=-1
+    test.V11=-1
     test.set_all_pixels(0)
     test.plot_potential()
     
     
-    test.set_all_pixels(0)
+
     import time
     def measure(start,stop,numpoints):
         plt.figure()
@@ -250,8 +262,8 @@ if( __name__ == "__main__" ):
         plt.plot(sweep,result)
         
     def measure2(start,stop,numpoints):
-        test.V1=-4
-        test.V11=-4
+        # test.V1=-10
+        # test.V11=-4
         # plt.figure()
         result=[]
         sweep=np.linspace(start,stop,numpoints)
@@ -264,10 +276,10 @@ if( __name__ == "__main__" ):
     
     start_time=time.perf_counter()  
     # measure(-8,-2,30)
-    test.U0=0.05
-    # testresult,sweep=measure2(-2,0,30)
+
+    testresult,sweep=measure2(-2,0,30)
     # plt.plot(sweep,testresult,'*')
-    # plt.plot(sweep,testresult)
-    # plt.grid('on')
+    plt.plot(sweep,testresult)
+    plt.grid('on')
     stop_time=time.perf_counter()
     print("time spent: {:.2f}".format(stop_time-start_time))

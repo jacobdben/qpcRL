@@ -8,7 +8,7 @@ def folder_name(data_path):
     if not os.path.exists(data_path+"outcmaes"):
         os.mkdir(data_path+"outcmaes")
     folders=folders=list(os.walk(data_path+"outcmaes/"))[0][1]
-    lis=[int(f) for f in folders[0]]
+    lis=[int(f) for f in folders]
     lis.append(0)
     newfolder=data_path+'outcmaes/'+'{}/'.format(max(lis)+1)
     return newfolder
@@ -18,9 +18,14 @@ def optimize_cma(func_to_minimize,datahandler,maxfevals):
     
     data_path=datahandler.data_path
     newfolder=folder_name(data_path)
+    print("data saved to:")
+    print(newfolder)
     
     x,es=cma.fmin2(func_to_minimize,np.zeros(9),0.5,options={'maxfevals':maxfevals,'verb_filenameprefix':newfolder})
-    return x
+    with open(newfolder+"stopping_criterion.txt",mode='w') as file_object:
+        print(es.stop(),file=file_object)
+
+    return x,es
 
 
 

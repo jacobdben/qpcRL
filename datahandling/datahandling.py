@@ -5,6 +5,7 @@ import pickle
 
 save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data"
 # save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/Simulation"
+# save_data_path="/nbi/home/zrm611/projects/cma-es/saved_data"
 Vs=['V%i'%i for i in range(1,12)]
 parameters=['phi','salt','U0','energy','t']
 parameters.extend(Vs)
@@ -56,7 +57,7 @@ def load_cma_output(data_path=None,run_number=None):
     else:
         path+='/outcmaes/{}/'.format(run_number)
     xs=np.loadtxt(path+"xrecentbest.dat",skiprows=1)
-    return xs[:,4],xs[:,5:]
+    return xs[:,4],xs[:,5:],xs[np.argmin(xs[:,4]),5:]
 
 class datahandler():
     def __init__(self,experiment_name,QPC=None,data_path=None):

@@ -1,12 +1,70 @@
+import matplotlib.pyplot as plt
+import numpy as np
 
 
-# bounds=((19,41),(25,45))#((0,60),(0,70))
-# fig,ax=plt.subplots() 
-# QPC.U0=disorder
-# ax.set_title("Optimized") 
-# QPC.set_all_pixels(x+common_voltages[14])
-# t1,p1=QPC.plot_potential_section(bounds=bounds,ax=ax)
-# plt.colorbar(p1)
+from simulations.pixel_array_sim_2 import pixelarrayQPC
+from datahandling.datahandling import load_cma_output
+from optimization.newpoint import new_point
+ 
+def plot_run(QPC,data_path,run_number,common_voltages,bounds,staircasiness,pfactor):
+    fitness,recentbestxs,xbest=load_cma_output(data_path,run_number)
+    xbest,penalty=new_point(xbest,bounds=bounds)
+    
+    result=[]
+    baseline=[]
+    for avg_voltage in common_voltages:
+        QPC.set_all_pixels(xbest+avg_voltage)
+        result.append(QPC.transmission())
+        
+        QPC.set_all_pixels(avg_voltage)
+        baseline.append(QPC.transmission())
+        
+    plt.figure()
+    plt.plot(common_voltages,result,label="Optimized: {:.4f}".format(staircasiness.histogram(result)+pfactor*penalty))
+    plt.plot(common_voltages,baseline,label="Not Optimized: {:.4f}".format(staircasiness.histogram(baseline)))
+    plt.xlabel("Avg voltage")
+    plt.ylabel("Conductance")
+    plt.grid('on')
+    plt.legend()
+    
+
+def plot_potentials(QPC,data_path,run_number,common_voltages,bounds,staircasiness,pfactor,section=((19,41),(25,45))):
+    fitness,recentbestxs,xbest=load_cma_output(data_path,run_number)
+    xbest,penalty=new_point(xbest,bounds=bounds)
+    if section==None:
+        section=((0,60),(0,70))
+    fig,ax=plt.subplots() 
+    ax.set_title("Optimized at avg_voltage: {:.2f}".format(common_voltages[14])) 
+    QPC.set_all_pixels(xbest+common_voltages[14])
+    optimized_mid,p1=QPC.plot_potential_section(bounds=section,ax=ax)
+    plt.colorbar(p1)
+    
+    fig,ax=plt.subplots() 
+    ax.set_title("Optimized at avg_voltage: {:.2f}".format(common_voltages[0])) 
+    QPC.set_all_pixels(xbest+common_voltages[0])
+    optimized_start,p1=QPC.plot_potential_section(bounds=section,ax=ax)
+    plt.colorbar(p1)
+    
+    fig,ax=plt.subplots() 
+    ax.set_title("Not Optimized at avg_voltage: {:.2f}".format(common_voltages[14])) 
+    QPC.set_all_pixels(common_voltages[14])
+    not_optimized_mid,p1=QPC.plot_potential_section(bounds=section,ax=ax)
+    plt.colorbar(p1)
+    
+    fig,ax=plt.subplots() 
+    ax.set_title("Not Optimized at avg_voltage: {:.2f}".format(common_voltages[0])) 
+    QPC.set_all_pixels(common_voltages[0])
+    not_optimized_start,p1=QPC.plot_potential_section(bounds=section,ax=ax)
+    plt.colorbar(p1)
+    
+    
+    # fig,ax=plt.subplots()
+    # # ax.set_title("Not Optimized at avg_voltage: {:.2f}".format(common_voltages[0])) 
+    # plt.imshow((optimized_mid-not_optimized_start).T,origin='lower',extent=(section[0][0],section[0][1],section[1][0],section[1][1]))
+    # plt.colorbar()
+    
+    
+    
 # plt.savefig(figurepath+"2")
 
 # fig,ax=plt.subplots()

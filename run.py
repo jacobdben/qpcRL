@@ -59,7 +59,7 @@ QPC2.phi=B_field2
 
 
 # Initialize Datahandler
-dat=datahandler('pixel_disorder',QPC=QPC)
+dat=datahandler('ML_data',QPC=QPC)
 
 
 # Define the function we want to minimize, 
@@ -72,7 +72,9 @@ def func_to_minimize(x):
     result=[]
     for avg_gates in common_voltages:
         QPC.set_all_pixels(x_projected+avg_gates)
-        result.append(QPC.transmission())
+        res=QPC.transmission()
+        result.append(res)
+        dat.save_measurement(x_projected+avg_gates, res)
     return pfactor*penalty+stairs.histogram(result)
 
 
@@ -110,7 +112,7 @@ if __name__=="__main__":
     
     #optimize with cma
     xbest,es=optimize_cma(func_to_minimize,dat,maxfevals=10)
-    
+    dat.save_datahandler()
     
     #optimize with gradient descent
     # xbest2=optimize_gradient(func_to_minimize,dat,bounds=bounds,maxiter=5)

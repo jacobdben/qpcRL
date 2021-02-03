@@ -115,7 +115,7 @@ class datahandler():
     def make_key(self,measurement):
         key=''
         for x in measurement:
-            key+='{:.3f}_'.format(x)
+            key+='{:.4f}_'.format(x)
         return key[:-1]
     
 

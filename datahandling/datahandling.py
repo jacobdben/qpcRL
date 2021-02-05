@@ -118,6 +118,16 @@ class datahandler():
             key+='{:.4f}_'.format(x)
         return key[:-1]
     
+    def read_data(self,):
+        X=[]
+        Y=[]
+        for key in self.dict['measurements'].keys():
+            vals=key.split("_")
+            vals=[float(val) for val in vals]
+            X.append(vals)
+            Y.append(self.dict['measurements'][key])
+        return np.array(X),np.array(Y)
+    
 
 
 

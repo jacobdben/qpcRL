@@ -59,8 +59,23 @@ QPC2.phi=B_field2
 
 
 # Initialize Datahandler
-dat=datahandler('ML_data',QPC=QPC)
+dat=datahandler('ML_data_random',QPC=QPC)
 
+def make_ml_data(data_points):
+    np.random.seed(2)
+    for i in range(data_points):
+        x=np.random.uniform(-1,1,9)
+        x_projected,p=new_point(x,bounds=bounds)
+        x_projected+=np.random.choice(common_voltages)
+        if dat.check_measurement(x_projected):
+            print("h")
+        else:
+            QPC.set_all_pixels(x_projected)
+            dat.save_measurement(x_projected,QPC.transmission())
+        if i%(data_points/20)==0:
+            print("%.2f %%"%(i/data_points*100))
+    
+    
 
 # Define the function we want to minimize, 
 # in this case, its the voltage on individual pixels, constrained by their average=0
@@ -111,15 +126,22 @@ def fitness_check(reported_fitness,reported_xs):
 if __name__=="__main__":
     
     #optimize with cma
-    xbest,es=optimize_cma(func_to_minimize,dat,maxfevals=10)
-    dat.save_datahandler()
+    # xbest,es=optimize_cma(func_to_minimize,dat,maxfevals=10)
+    # dat.save_datahandler()
     
     #optimize with gradient descent
     # xbest2=optimize_gradient(func_to_minimize,dat,bounds=bounds,maxiter=5)
     
+    data_points=5000
+    start=time.perf_counter()
+    make_ml_data(data_points)
+    stop=time.perf_counter()
+    print("total time: %.3f seconds"%(stop-start))
+    dat.save_datahandler()
+    
     
     # alternate_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data/clusterruns"
-    # plot_run(QPC, alternate_path,7, common_voltages, bounds, stairs,pfactor)
+    # plot_run(QPC, alternate_path,9, common_voltages, bounds, stairs,pfactor)
     # plot_potentials(QPC, dat.data_path, 21, common_voltages, bounds, staircasiness=stairs, pfactor=pfactor)
     # QPC.set_all_pixels(0)
     # QPC.plot_potential()

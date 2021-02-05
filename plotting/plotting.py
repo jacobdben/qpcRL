@@ -2,13 +2,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-from simulations.pixel_array_sim_2 import pixelarrayQPC
 from datahandling.datahandling import load_cma_output
 from optimization.newpoint import new_point
  
 def plot_run(QPC,data_path,run_number,common_voltages,bounds,staircasiness,pfactor):
     fitness,recentbestxs,xbest=load_cma_output(data_path,run_number)
     xbest,penalty=new_point(xbest,bounds=bounds)
+    print("penalty from projection: %.4f" %(penalty*pfactor))
     
     result=[]
     baseline=[]

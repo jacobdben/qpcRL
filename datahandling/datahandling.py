@@ -126,7 +126,7 @@ class datahandler():
             vals=[float(val) for val in vals]
             X.append(vals)
             Y.append(self.dict['measurements'][key])
-        return np.array(X),np.array(Y)
+        return np.array(X),np.array(Y).reshape((len(Y),1))
     
 
 

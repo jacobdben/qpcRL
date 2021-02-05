@@ -1,6 +1,6 @@
 
 from sklearn.model_selection import train_test_split
-from keras.models import Sequential
+from keras.models import Sequential,load_model
 from keras.layers import Dense
 from tensorflow.keras.losses import MeanSquaredError
 import pickle
@@ -10,8 +10,10 @@ import time
 from datetime import datetime
 
 class regression_network():
-    def __init__(self,input_layer_dim=10,data_dim=9,activation_func='tanh',hidden_layers=1,hidden_layer_neurons=100):
+    def __init__(self,input_layer_dim=10,data_dim=9,load_model_name=None,activation_func='tanh',hidden_layers=1,hidden_layer_neurons=100):
         # self.compiled_model=self.make_model(input_layer_dim,data_dim,activation_func,hidden_layers,hidden_layer_neurons)
+        if load_model_name!=None:
+            self.model=load_model(load_model_name)
         self.activation_func=activation_func
         self.model = Sequential()
         # input layer neurons= parameters + 1
@@ -82,6 +84,9 @@ class regression_network():
         ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         return ax
     
+    def save_model(self,model_name):
+        self.model.save(model_name)
+    
     
     def make_model(self,input_layer_dim,data_dim,activation_func='tanh',hidden_layers=1,hidden_layer_neurons=100):
         #UNUSED, instead incoorporated into the __init__
@@ -108,7 +113,7 @@ def read_data(path_to_dict,dict_name):
         vals=[float(val) for val in vals]
         X.append(vals)
         Y.append(dictionary['measurements'][key])
-    return np.array(X),np.array(Y)
+    return np.array(X),np.array(Y).reshape((len(Y),1))
 
 
 

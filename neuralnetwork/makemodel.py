@@ -2,6 +2,7 @@
 from sklearn.model_selection import train_test_split
 from keras.models import Sequential,load_model
 from keras.layers import Dense
+from keras.callbacks import EarlyStopping
 from tensorflow.keras.losses import MeanSquaredError
 import pickle
 import numpy as np
@@ -40,18 +41,29 @@ class feedforward_network():
                     validation_data=None,
                     epochs=10,
                     batch_size=None, #Defaults to 32 in Keras
-                    verbose=0):
+                    verbose=0,
+                    earlystopping=True):
+        
+        
+        # Create options dict sent to model.fit
+        options={}
+        if earlystopping:
+            es=EarlyStopping(monitor='val_loss',mode='min',verbose=1,patience=50)
+            options['callbacks']=[es]
+            
+        if validation_data!=None:
+            options['validation_data']=validation_data
+            
+            
+        # Print start time
         now = datetime.now()
         current_time = now.strftime("%H:%M:%S")
         print("training started at: =", current_time)
-
-        # Start timer
-        start_time=time.perf_counter()
-        if validation_data==None:
-            history=self.model.fit(X_train,Y_train, epochs=epochs, batch_size=batch_size, verbose=verbose)
-        else:
-            history=self.model.fit(X_train,Y_train, epochs=epochs, batch_size=batch_size, verbose=verbose,validation_data=validation_data)
-
+       # Start timer
+        start_time=time.perf_counter() 
+        history=self.model.fit(X_train,Y_train, epochs=epochs, batch_size=batch_size, verbose=verbose,**options)
+        
+        
         # Stop timer
         stop_time=time.perf_counter()
         print("Training time model: %.2f seconds"%(stop_time-start_time))

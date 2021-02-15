@@ -26,9 +26,9 @@ dat=datahandler('QCODESCHECK',QPC)
 def transmission_func(qpc=QPC):
     while True:
         (V1,V2,V3)=yield
-        QPC.V1(V1)
-        QPC.V2(V2)
-        QPC.V3(V3)
+        QPC.V1=V1
+        QPC.V2=V2
+        QPC.V3=V3
         yield QPC.transmission()
     
     
@@ -79,7 +79,7 @@ def qcmeas(V2,tilt,common_voltages):
             result=[]
             for avg_gates in common_voltages:
                 QPC.set_all_pixels(x_projected+avg_gates)
-                result.append(QPC.transmission())
+                result.append(instrument2.transmission.get())
                 datasaver.add_result((instrument.v1, 1),
                                      (instrument.v3, 2),
                                      (instrument2.transmission, QPC.transmission()))

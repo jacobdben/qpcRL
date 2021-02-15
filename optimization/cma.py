@@ -14,14 +14,14 @@ def folder_name(data_path):
     return newfolder
 
 
-def optimize_cma(func_to_minimize,datahandler,maxfevals):
+def optimize_cma(func_to_minimize,datahandler,maxfevals,start_point=np.zeros(9)):
     
     data_path=datahandler.data_path
     newfolder=folder_name(data_path)
     print("data saved to:")
     print(newfolder)
     
-    x,es=cma.fmin2(func_to_minimize,np.zeros(9),0.5,options={'maxfevals':maxfevals,'verb_filenameprefix':newfolder})
+    x,es=cma.fmin2(func_to_minimize,start_point,0.5,options={'maxfevals':maxfevals,'verb_filenameprefix':newfolder})
     with open(newfolder+"stopping_criterion.txt",mode='w') as file_object:
         print(es.stop(),file=file_object)
 

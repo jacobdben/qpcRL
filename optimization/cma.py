@@ -3,6 +3,7 @@ import cma
 # general
 import numpy as np
 import os
+import time
 
 def folder_name(data_path):
     if not os.path.exists(data_path+"outcmaes"):
@@ -14,14 +15,27 @@ def folder_name(data_path):
     return newfolder
 
 
-def optimize_cma(func_to_minimize,datahandler,maxfevals,start_point=np.zeros(9)):
+def optimize_cma(func_to_minimize,datahandler,maxfevals,sigma=0.5,start_point=np.zeros(2),time_stop=None,callbacks=[None]):
+    
+    if not time_stop==None:
+        start_time=time.perf_counter()
+        stop_time=time_stop
+        def callback_time(es):
+            cur_time=time.perf_counter()
+            if (cur_time-start_time)>=stop_time:
+                es.stop()['time']=cur_time-start_time
+        if callbacks==None:
+            callbacks=[callback_time]
+        else:
+            callbacks.append(callback_time)
+        
     
     data_path=datahandler.data_path
     newfolder=folder_name(data_path)
     print("data saved to:")
     print(newfolder)
-    
-    x,es=cma.fmin2(func_to_minimize,start_point,0.5,options={'maxfevals':maxfevals,'verb_filenameprefix':newfolder})
+    os.mkdir(newfolder[:-1])
+    x,es=cma.fmin2(func_to_minimize,start_point,sigma0=sigma,args=(newfolder,),options={'maxfevals':maxfevals,'verb_filenameprefix':newfolder},callback=callbacks)
     with open(newfolder+"stopping_criterion.txt",mode='w') as file_object:
         print(es.stop(),file=file_object)
 

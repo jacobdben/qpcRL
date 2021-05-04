@@ -83,7 +83,7 @@ def qpc_potential(site, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11):
            _gate5(x, y, V5) + _gate6(x, y, V6) + _gate7(x, y, V7) + _gate8(x,y,V8) + \
            _gate9(x, y, V9) + _gate10(x, y, V10) + _gate11(x, y, V11) 
 
-disorder_values=make_disorder(L, W, length_scale=5).T
+disorder_values=make_disorder(L, W, length_scale=5,random_seed=2).T
 # print(disorder_values)
 pixel_disorder_values=make_pixel_disorder(L,W,allgatedims[1:10])
 

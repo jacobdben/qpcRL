@@ -59,7 +59,7 @@ QPC2.phi=B_field2
 
 
 # Initialize Datahandler
-dat=datahandler('ML_data_random',QPC=QPC)
+dat=datahandler('ML_data_disorder_seed_3',QPC=QPC)
 
 def make_ml_data(data_points):
     np.random.seed(2)
@@ -132,12 +132,12 @@ if __name__=="__main__":
     #optimize with gradient descent
     # xbest2=optimize_gradient(func_to_minimize,dat,bounds=bounds,maxiter=5)
     
-    # data_points=5000
-    # start=time.perf_counter()
-    # make_ml_data(data_points)
-    # stop=time.perf_counter()
-    # print("total time: %.3f seconds"%(stop-start))
-    # dat.save_datahandler()
+    data_points=5000
+    start=time.perf_counter()
+    make_ml_data(data_points)
+    stop=time.perf_counter()
+    print("total time: %.3f seconds"%(stop-start))
+    dat.save_datahandler()
     
     
     # alternate_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data/clusterruns"
@@ -152,20 +152,20 @@ if __name__=="__main__":
     
     
     #optimize with cma without disorder
-    QPC.disorder=0
-    xbest,es=optimize_cma(func_to_minimize,dat,maxfevals=10)
-    xbest_projected,penalty=new_point(xbest,bounds=bounds)
+    # QPC.disorder=0
+    # xbest,es=optimize_cma(func_to_minimize,dat,maxfevals=10)
+    # xbest_projected,penalty=new_point(xbest,bounds=bounds)
     
     #optimize with cma with solution from without disorder, with disorder
-    QPC.disorder=disorder
-    xbest2,es2=optimize_cma(func_to_minimize,dat,maxfevals=10,start_point=xbest_projected)
-    xbest2_projected,penalty2=new_point(xbest2,bounds=bounds)
+    # QPC.disorder=disorder
+    # xbest2,es2=optimize_cma(func_to_minimize,dat,maxfevals=10,start_point=xbest_projected)
+    # xbest2_projected,penalty2=new_point(xbest2,bounds=bounds)
     
-    with open(dat.data_path+"disorder_test.txt",mode='w') as file_object:
-        print("no disorder xbest_projected",file=file_object)
-        print(xbest_projected,file=file_object)
-        print("with disorder xbest2_projected",file=file_object)
-        print(xbest2_projected,file=file_object)
-        print("difference xbest2_projected-xbest_projected",file=file_object)
-        print(xbest2_projected-xbest_projected,file=file_object)
+    # with open(dat.data_path+"disorder_test.txt",mode='w') as file_object:
+    #     print("no disorder xbest_projected",file=file_object)
+    #     print(xbest_projected,file=file_object)
+    #     print("with disorder xbest2_projected",file=file_object)
+    #     print(xbest2_projected,file=file_object)
+    #     print("difference xbest2_projected-xbest_projected",file=file_object)
+    #     print(xbest2_projected-xbest_projected,file=file_object)
     

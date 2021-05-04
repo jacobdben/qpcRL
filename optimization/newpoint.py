@@ -39,7 +39,7 @@ def fourier_modes(p):
     V=np.zeros((3,3), dtype=np.complex_)
     for x in range(3):
         for y in range(3):
-            V[x,y] = np.sum([np.exp(1j*2*np.pi/3*kx*x) * np.exp(1j*2*np.pi/3*ky*y) * p[kx * 3 + ky] for kx in range(3) for ky in range(3)])
+            V[x,y] = np.sum([np.exp(1j*2*np.pi/2*kx*x) * np.exp(1j*2*np.pi/2*ky*y) * p[kx * 3 + ky] for kx in range(3) for ky in range(3)])
     return V
 
 # result1,pen=new_point(np.array([3,2,0,-7,0,0,1,0,1]))

@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
 
 
-def make_disorder(L,W,length_scale):
-    np.random.seed(2)
+def make_disorder(L,W,length_scale,random_seed=2):
+    np.random.seed(random_seed)
     xs=np.arange(start=np.floor(length_scale/2),stop=L,step=length_scale)
     ys=np.arange(start=np.floor(length_scale/2),stop=W,step=length_scale)
     XS,YS=np.meshgrid(xs,ys)

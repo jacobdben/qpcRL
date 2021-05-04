@@ -72,6 +72,13 @@ class staircasiness():
             score+=make_gauss_fit(staircase,plateau,plot=True)
         return 1/score
     
+    def deriv_metric(self,staircase):
+        res=0
+        for i in range(len(staircase)-1):
+            res += np.sqrt(np.abs(staircase[i+1]-staircase[i]))
+        res /= np.sqrt(np.max(staircase)-np.min(staircase))
+        return res
+    
     def step_loss(self,last_transmission,transmission):
         indexs=np.digitize(np.array([last_transmission,transmission]),self.bins)
         # print(indexs)

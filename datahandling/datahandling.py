@@ -3,9 +3,11 @@ import numpy as np
 import pickle
 
 
-save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data"
+# save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data"
 # save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/Simulation"
 # save_data_path="/nbi/home/zrm611/projects/cma-es/saved_data"
+# save_data_path="F:/qcodes_data/BBQPC_2021/saved_data"
+save_data_path="F:/qcodes_data/BBQPC2_2021/saved_data"
 Vs=['V%i'%i for i in range(1,12)]
 parameters=['phi','salt','U0','energy','t']
 parameters.extend(Vs)
@@ -77,7 +79,8 @@ class datahandler():
                         raise Exception("Parameters do not match at key: "+key +" ,with {} in existing dict, and {} in QPC.__dict__".format(self.dict[key],QPC.__dict__[key]))
                         
         else:
-            self.dict=self.new_dict(QPC)
+            if not QPC == None:
+                self.dict=self.new_dict(QPC)
 
         
     def save_datahandler(self,):

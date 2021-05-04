@@ -4,12 +4,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 
-def new_point(x,bounds=(-1.5,1.5)):
+def new_point(x,bounds=(-1.5,1.5),offset=0):
     y=cp.Variable(len(x))
     y.value=x.copy()
     
     objective=cp.Minimize(cp.sum_squares(x-y))
-    constraints=[cp.sum(y)/len(x)==0, #SUM TO 0
+    constraints=[cp.sum(y)/len(x)-offset==0, #SUM TO 0
                   np.eye(len(x)) @ y <=bounds[1], #upper bound
                   -np.eye(len(x)) @ y <=abs(bounds[0])] #lower bound
     

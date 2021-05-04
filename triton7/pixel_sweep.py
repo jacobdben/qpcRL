@@ -95,14 +95,18 @@ def sweep_gates(param_sets: _BaseParameter,
                 # new.write(f'#{num_points}'+'\n')
                 # start_time = time.perf_counter()
                 for i in range(len(param_set_vals)):
-                    values=param_set_vals[i,:]
+                    values=param_set_vals[i]
                     param_set_output=[]
-                    for j in range(len(values)):
-                        param_sets[j].set(values[j])
-                        param_set_output.append((param_sets[j],values[j]))
-                    
-                    # if i==0:
-                    #     time.sleep(delay*5) #extra delay for the first point, to reduce noice specifically for that point
+                    if isinstance(values,np.float64):
+                        param_sets[0].set(values)
+                        param_set_output.append((param_sets[0],values))
+                    else: 
+                        for j in range(len(values)):
+                            param_sets[j].set(values[j])
+                            param_set_output.append((param_sets[j],values[j]))
+                        
+                    if i==0:
+                        time.sleep(delay*5) #extra delay for the first point, to reduce noice specifically for that point
                     time.sleep(delay)
                     result=param_meas.get()
                     results.append(result)

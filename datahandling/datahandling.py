@@ -1,13 +1,14 @@
 import os
 import numpy as np
 import pickle
+import json
 
 
-# save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data"
+save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data"
 # save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/Simulation"
 # save_data_path="/nbi/home/zrm611/projects/cma-es/saved_data"
 # save_data_path="F:/qcodes_data/BBQPC_2021/saved_data"
-save_data_path="F:/qcodes_data/BBQPC2_2021/saved_data"
+# save_data_path="F:/qcodes_data/BBQPC2_2021/saved_data"
 Vs=['V%i'%i for i in range(1,12)]
 parameters=['phi','salt','U0','energy','t']
 parameters.extend(Vs)
@@ -29,7 +30,7 @@ def load_optimization_dict(name):
     file.close
     return output
 
-def load_cma_output(data_path=None,run_number=None):
+def load_cma_data(run_id=None,data_path=None):
     """
     Parameters
     ----------
@@ -50,16 +51,27 @@ def load_cma_output(data_path=None,run_number=None):
     else:
         path=data_path
         
-    if run_number==None:
+    if run_id==None:
         folders=list(os.walk(path+"/outcmaes/"))[0][1]
         folders_as_int=[int(f) for f in folders]
         latest_run=max(folders_as_int)
         path+='/outcmaes/{}/'.format(latest_run)
         
     else:
-        path+='/outcmaes/{}/'.format(run_number)
-    xs=np.loadtxt(path+"xrecentbest.dat",skiprows=1)
-    return xs[:,4],xs[:,5:],xs[np.argmin(xs[:,4]),5:]
+        path+='/outcmaes/{}/'.format(run_id)
+        
+
+
+    print("data loaded from:")
+    print(path)
+    
+    with open(path+'datadict.txt','rb') as file:
+        datadict=json.load(file)
+        
+    
+    return datadict
+
+
 
 class datahandler():
     def __init__(self,experiment_name,QPC=None,data_path=None):

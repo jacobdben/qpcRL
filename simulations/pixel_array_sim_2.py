@@ -176,10 +176,13 @@ class pixelarrayQPC():
         if plot:
             fig,ax=plt.subplots()
             rects=[]
-            for dims in allgatedims:
+            for gate,dims in enumerate(allgatedims):
                 rect=Rectangle((dims[1],dims[3]),dims[2]-dims[1],dims[4]-dims[3])
                 rects.append(rect)
-    
+                
+                ax.text(x=dims[1],y=dims[3],s=str(gate))
+                
+                
             pc=PatchCollection(rects, facecolor='green',alpha=1)
             ax.add_collection(pc)
             
@@ -239,7 +242,7 @@ class pixelarrayQPC():
     
 
 if( __name__ == "__main__" ):
-    test=pixelarrayQPC(W=W,L=L,plot=False,disorder_type='regular')
+    test=pixelarrayQPC(W=W,L=L,plot=True,disorder_type='regular')
     test.U0=0.1
     test.phi=0.1
     test.energy=1
@@ -250,36 +253,36 @@ if( __name__ == "__main__" ):
     
     
 
-    import time
-    def measure(start,stop,numpoints):
-        plt.figure()
-        result=[]
-        sweep=np.linspace(start,stop,numpoints)
-        for i in sweep:
-            test.V11=i
-            test.V1=i
-            result.append(test.transmission())
-        plt.plot(sweep,result)
+    # import time
+    # def measure(start,stop,numpoints):
+    #     plt.figure()
+    #     result=[]
+    #     sweep=np.linspace(start,stop,numpoints)
+    #     for i in sweep:
+    #         test.V11=i
+    #         test.V1=i
+    #         result.append(test.transmission())
+    #     plt.plot(sweep,result)
         
-    def measure2(start,stop,numpoints):
-        # test.V1=-10
-        # test.V11=-4
-        # plt.figure()
-        result=[]
-        sweep=np.linspace(start,stop,numpoints)
-        for i in sweep:
-            test.set_all_pixels(i)
-            result.append(test.transmission())
-        # plt.plot(sweep,result)
-        return result,sweep
+    # def measure2(start,stop,numpoints):
+    #     # test.V1=-10
+    #     # test.V11=-4
+    #     # plt.figure()
+    #     result=[]
+    #     sweep=np.linspace(start,stop,numpoints)
+    #     for i in sweep:
+    #         test.set_all_pixels(i)
+    #         result.append(test.transmission())
+    #     # plt.plot(sweep,result)
+    #     return result,sweep
 
     
-    start_time=time.perf_counter()  
-    # measure(-8,-2,30)
+    # start_time=time.perf_counter()  
+    # # measure(-8,-2,30)
 
-    testresult,sweep=measure2(-2,0,30)
-    # plt.plot(sweep,testresult,'*')
-    plt.plot(sweep,testresult)
-    plt.grid('on')
-    stop_time=time.perf_counter()
-    print("time spent: {:.2f}".format(stop_time-start_time))
+    # testresult,sweep=measure2(-2,0,30)
+    # # plt.plot(sweep,testresult,'*')
+    # plt.plot(sweep,testresult)
+    # plt.grid('on')
+    # stop_time=time.perf_counter()
+    # print("time spent: {:.2f}".format(stop_time-start_time))

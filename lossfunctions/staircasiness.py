@@ -72,12 +72,30 @@ class staircasiness():
             score+=make_gauss_fit(staircase,plateau,plot=True)
         return 1/score
     
-    def deriv_metric(self,staircase):
+    def deriv_metric_zeros1(self,staircase):
+        res=0
+        zero_count=0
+        for i in range(len(staircase)-1):
+            res += np.sqrt(np.abs(staircase[i+1]-staircase[i]))
+            if staircase[i]<=1e-5: # added afterwards
+                    zero_count+=1
+                
+        res /= np.sqrt(np.max(staircase)-np.min(staircase))
+        res/=len(staircase)-zero_count
+        return res
+    
+    def deriv_metric_original(self,staircase):
         res=0
         for i in range(len(staircase)-1):
             res += np.sqrt(np.abs(staircase[i+1]-staircase[i]))
+             
         res /= np.sqrt(np.max(staircase)-np.min(staircase))
+        
         return res
+    
+    def L_1_regularization(self,x,lamb):
+        return np.sum(lamb*abs(x)) 
+        
     
     def step_loss(self,last_transmission,transmission):
         indexs=np.digitize(np.array([last_transmission,transmission]),self.bins)

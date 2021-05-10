@@ -16,23 +16,32 @@ def folder_name(data_path):
     return newfolder
 
 
-def optimize_cma(func_to_minimize,datahandler,maxfevals,sigma=0.5,start_point=np.zeros(2),time_stop=None,callbacks=[None],args=[]):
+def optimize_cma(func_to_minimize,datahandler,maxfevals,sigma=0.5,start_point=np.zeros(2),time_stop=None,callbacks=[None],args=[],QCODESRUN=False):
     global global_start_time, global_stop_time
     if not time_stop==None:
-        global_start_time=time.time()
-        print(global_start_time)
-        global_stop_time=time_stop
-        print(global_stop_time)
+        # global_start_time=time.time()
+        # print(global_start_time)
+        # global_stop_time=time_stop
+        # print(global_stop_time)
+        # def callback_time(es):
+        #     global global_start_time, global_stop_time
+        #     cur_time=time.time()
+        #     # print('cur_time %f'%cur_time)
+        #     if (cur_time-global_start_time)>global_stop_time:
+        #         print('STOP')
+        #         print(cur_time)
+        #         print(global_start_time)
+        #         print(global_stop_time)
+        #         es.stop()['time']=(cur_time-global_start_time) #{'start_time':start_time,'cur_time':cur_time,'stop_time':stop_time}
+        
         def callback_time(es):
-            global global_start_time, global_stop_time
-            cur_time=time.time()
-            # print('cur_time %f'%cur_time)
-            if (cur_time-global_start_time)>global_stop_time:
-                print('STOP')
-                print(cur_time)
-                print(global_start_time)
-                print(global_stop_time)
-                es.stop()['time']=(cur_time-global_start_time) #{'start_time':start_time,'cur_time':cur_time,'stop_time':stop_time}
+            try:
+                cur_time=es.time_last_displayed
+            except AttributeError:
+                return
+            if cur_time>=time_stop:
+                es.stop()['time']=cur_time
+        
         if callbacks==None:
             callbacks=[callback_time]
         else:
@@ -47,7 +56,10 @@ def optimize_cma(func_to_minimize,datahandler,maxfevals,sigma=0.5,start_point=np
     dataidsdict={}
     args_send=[dataidsdict]
     args_send.extend(args)
-    x,es=cma.fmin2(func_to_minimize,start_point,sigma0=sigma,args=args_send,options={'maxfevals':maxfevals,'verb_filenameprefix':newfolder},callback=callbacks)
+    if QCODESRUN:
+        x,es=cma.fmin2(func_to_minimize,start_point,sigma0=sigma,args=args_send,options={'maxfevals':maxfevals,'verb_filenameprefix':newfolder},callback=callbacks)
+    else:
+        x,es=cma.fmin2(func_to_minimize,start_point,sigma0=sigma,options={'maxfevals':maxfevals,'verb_filenameprefix':newfolder},callback=callbacks)
     with open(newfolder+"stopping_criterion.txt",mode='w') as file_object:
         print(es.stop(),file=file_object)
         

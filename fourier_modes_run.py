@@ -18,6 +18,7 @@ steps=100
 disorder=0.1
 outer_gates=-4
 B_field=0
+energy=2
 
 # Parameters for optimization algorithm
 bounds=(-1,1)
@@ -31,8 +32,9 @@ common_voltages=np.linspace(start,stop,steps)
 
 
 # Initialize QPC instance and set parameters
-QPC=pixelarrayQPC(plot=False,disorder_type='regular')
+QPC=pixelarrayQPC(plot=True,disorder_type='regular')
 QPC.U0=disorder
+QPC.energy=energy
 QPC.V1=outer_gates
 QPC.V11=outer_gates
 QPC.phi=B_field
@@ -51,7 +53,7 @@ def func_to_minimize(x,table): #x len 8
         result.append(QPC.transmission())
     
     
-    val=stairs.deriv_metric_zeros1(result)+stairs.L_1_regularization(x0,0.01)
+    val=stairs.deriv_metric_zeros1(result)+stairs.L_1_regularization(x0, 0.001)+stairs.L_2_regularization(x0, 0.001)
     
     key=table['next_key']
     table['next_key']+=1
@@ -64,7 +66,7 @@ def func_to_minimize(x,table): #x len 8
 
 #%% start the optimization
 
-xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.random.uniform(-0.5,0.5,8),stop_time=72*3600,options={'tolx':1e-3})
+xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.random.uniform(-0.5,0.5,8),stop_time=48*3600,options={'tolx':1e-3})
    
 
 #%% resume the optimization

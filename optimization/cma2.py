@@ -40,7 +40,7 @@ def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=
     os.mkdir(newfolder[:-1])
     
     #start a datadict and measure the starting point, cma-es for some reason doesnt measure the starting point
-    datadict={'next_key':0,'measurements':{},'starting_point':{'measurements':{},'next_key':0}}
+    datadict={'next_key':0,'measurements':{},'starting_point':{'next_key':0,'measurements':{}}}
     func_to_minimize(start_point,datadict['starting_point'])
     
     args_send=[datadict]

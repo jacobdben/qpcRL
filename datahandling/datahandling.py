@@ -1,10 +1,14 @@
 import os
 import numpy as np
 import pickle
+import json
 
 
-save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data"
+#save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data"
 # save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/Simulation"
+save_data_path="/nbi/user-scratch/f/fxg433/projects/saved_data2"
+# save_data_path="F:/qcodes_data/BBQPC_2021/saved_data"
+# save_data_path="F:/qcodes_data/BBQPC2_2021/saved_data"
 Vs=['V%i'%i for i in range(1,12)]
 parameters=['phi','salt','U0','energy','t']
 parameters.extend(Vs)
@@ -26,7 +30,7 @@ def load_optimization_dict(name):
     file.close
     return output
 
-def load_cma_output(data_path=None,run_number=None):
+def load_cma_data(run_id=None,data_path=None):
     """
     Parameters
     ----------
@@ -47,16 +51,27 @@ def load_cma_output(data_path=None,run_number=None):
     else:
         path=data_path
         
-    if run_number==None:
+    if run_id==None:
         folders=list(os.walk(path+"/outcmaes/"))[0][1]
         folders_as_int=[int(f) for f in folders]
         latest_run=max(folders_as_int)
         path+='/outcmaes/{}/'.format(latest_run)
         
     else:
-        path+='/outcmaes/{}/'.format(run_number)
-    xs=np.loadtxt(path+"xrecentbest.dat",skiprows=1)
-    return xs[:,4],xs[:,5:]
+        path+='/outcmaes/{}/'.format(run_id)
+        
+
+
+    print("data loaded from:")
+    print(path)
+    
+    with open(path+'datadict.txt','rb') as file:
+        datadict=json.load(file)
+        
+    
+    return datadict
+
+
 
 class datahandler():
     def __init__(self,experiment_name,QPC=None,data_path=None):
@@ -66,17 +81,18 @@ class datahandler():
         else:
             self.data_path=data_path+'/'
             
-        self.fname=experiment_name+".pkl"
+        #self.fname=experiment_name+".pkl"
         
-        if self.fname in list(os.walk(self.data_path))[0][2]:
-            self.dict=self.load_dict()
-            if QPC!=None:
-                for key in parameters:
-                    if not self.dict[key]==QPC.__dict__[key]:
-                        raise Exception("Parameters do not match at key: "+key +" ,with {} in existing dict, and {} in QPC.__dict__".format(self.dict[key],QPC.__dict__[key]))
+        #if self.fname in list(os.walk(self.data_path))[0][2]:
+        #    self.dict=self.load_dict()
+        #    if QPC!=None:
+        #        for key in parameters:
+        #            if not self.dict[key]==QPC.__dict__[key]:
+        #                raise Exception("Parameters do not match at key: "+key +" ,with {} in existing dict, and {} in QPC.__dict__".format(self.dict[key],QPC.__dict__[key]))
                         
-        else:
-            self.dict=self.new_dict(QPC)
+        #else:
+        #    if not QPC == None:
+        #        self.dict=self.new_dict(QPC)
 
         
     def save_datahandler(self,):
@@ -114,8 +130,18 @@ class datahandler():
     def make_key(self,measurement):
         key=''
         for x in measurement:
-            key+='{:.3f}_'.format(x)
+            key+='{:.4f}_'.format(x)
         return key[:-1]
+    
+    def read_data(self,):
+        X=[]
+        Y=[]
+        for key in self.dict['measurements'].keys():
+            vals=key.split("_")
+            vals=[float(val) for val in vals]
+            X.append(vals)
+            Y.append(self.dict['measurements'][key])
+        return np.array(X),np.array(Y).reshape((len(Y),1))
     
 
 

@@ -85,8 +85,8 @@ def func_to_minimize(x,table): #x len 8
     
     return val+penalty*pfactor
 
-# baseline={'next_key':0,'measurements':{}}
-# func_to_minimize(np.zeros(9),baseline)
+baseline={'next_key':0,'measurements':{}}
+func_to_minimize(np.zeros(9),baseline)
 #%%
 
 xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.zeros(9),stop_time=10*3600,options={'tolx':1e-3})

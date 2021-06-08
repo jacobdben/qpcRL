@@ -18,6 +18,8 @@ def make_disorder(L,W,length_scale,random_seed=2):
     
     disorder_int=griddata(points,disorder.flatten(),(grid_x,grid_y),method='cubic')
 
+    #reset the random seed
+    np.random.seed()
 
     return np.nan_to_num(disorder_int)
 

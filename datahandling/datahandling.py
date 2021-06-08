@@ -73,6 +73,46 @@ def load_cma_data(run_id=None,data_path=None):
 
 
 
+
+def unpack_cma_data(datadict,starting_point=False):
+    if starting_point:
+        start_loss=datadict['starting_point']['measurements']['0']['val']
+        start_staircase=datadict['starting_point']['measurements']['0']['staircase']
+        start_voltages=datadict['starting_point']['measurements']['0']['voltages']
+        return (start_loss,start_staircase,start_voltages)
+    
+    loss=[]
+    staircases=[]
+    voltages=[]
+    if 'x' in datadict['measurements']['0'].keys():
+        x=True
+        xs=[]
+    else:
+        x=False
+        xs=None
+
+    for key in datadict['measurements'].keys():
+
+        loss.append(datadict['measurements'][key]['val'])
+        staircases.append(datadict['measurements'][key]['staircase'])
+        voltages.append(datadict['measurements'][key]['voltages'])
+        
+        if x:
+            xs.append(datadict['measurements'][key]['x'])
+      
+    return loss,staircases,voltages,xs
+
+def save_pkl(object_instance,run_id,filename,data_path=save_data_path):
+    with open(data_path+"/outcmaes/{}/".format(run_id)+filename+".pkl",'wb') as file:
+        pickle.dump(object_instance,file)
+    
+def load_pkl(run_id,filename,data_path=save_data_path):
+    with open(data_path+"/outcmaes/{}/".format(run_id)+filename+".pkl",'rb') as file:
+        output=pickle.load(file)
+    return output
+    
+    
+    
 class datahandler():
     def __init__(self,experiment_name,QPC=None,data_path=None):
         
@@ -81,19 +121,6 @@ class datahandler():
         else:
             self.data_path=data_path+'/'
             
-        self.fname=experiment_name+".pkl"
-        
-        if self.fname in list(os.walk(self.data_path))[0][2]:
-            self.dict=self.load_dict()
-            if QPC!=None:
-                for key in parameters:
-                    if not self.dict[key]==QPC.__dict__[key]:
-                        raise Exception("Parameters do not match at key: "+key +" ,with {} in existing dict, and {} in QPC.__dict__".format(self.dict[key],QPC.__dict__[key]))
-                        
-        else:
-            if not QPC == None:
-                self.dict=self.new_dict(QPC)
-
         
     def save_datahandler(self,):
         file=open(self.data_path+self.fname,"wb")
@@ -146,51 +173,6 @@ class datahandler():
 
 
 
-    
-    
-    
-    
-    # def load_closest_data(self,voltages):
-    #     "OLD - doesnt work with dictionaries yet"
-    #     all_files=self.get_file_names(self.qpctype)
-    #     arr=[]
-    #     for fname in all_files:
-    #         arr.append(fname[:-4].split('_'))
-    #     arr=np.array(arr,dtype=float)
-    #     idx=np.linalg.norm(arr-np.array(voltages),axis=1).argmin()
-    #     return self.load_data(arr[idx,:],self.qpctype)
-    
-    # def check_data(self,voltages):
-    #     "OBSOLETE - isn't needed with "
-    #     fname=self.fname
-    #     for V in voltages:
-    #         fname+='{:.2f}_'.format(V)
-    #     fname=fname[:-1]+'.npy'
-    #     if os.path.isfile(fname):
-    #         return True
-    #     else:
-    #         return False
-
-    # def get_file_names(self):
-    #     "OBSOLETE"
-    #     return list(os.walk(self.data_path+self.qpctype+"/"))[0][2]
-                   
-    # def load_data(self,voltages):
-    #     "OBSOLETE"
-    #     fname=self.fname
-    #     for V in voltages:
-    #         fname+='{:.2f}_'.format(V)
-    #     fname=fname[:-1]+'.npy'
-    #     return np.load(fname)
-    
-    # def save_data(self,result,voltages):
-    #     "OBSOLETE"
-    #     fname=self.fname
-    #     for V in voltages:
-    #         fname+='{:.2f}_'.format(V)
-    #     fname=fname[:-1]+'.npy' 
-    #     np.save(fname,result)
-        
 
     
 

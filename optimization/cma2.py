@@ -40,7 +40,7 @@ def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=
     os.mkdir(newfolder[:-1])
     
     #start a datadict and measure the starting point, cma-es for some reason doesnt measure the starting point
-    datadict={'next_key':0,'measurements':{},'starting_point':{'next_key':0}}
+    datadict={'next_key':0,'measurements':{},'starting_point':{'measurements':{},'next_key':0}}
     func_to_minimize(start_point,datadict['starting_point'])
     
     args_send=[datadict]
@@ -66,7 +66,7 @@ def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=
     with open(newfolder+"datadict.txt",mode='w') as file_object:
         file_object.write(json.dumps(datadict))
         
-    return x,es, int(newfolder[-3:-1])
+    return x,es, int(newfolder[-2:-1])
 
 
 def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=None,callbacks=[None],args=[],options={}):

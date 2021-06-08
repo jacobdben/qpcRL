@@ -94,7 +94,7 @@ class staircasiness():
         return res
     
     def L_1_regularization(self,x,lamb):
-        return np.sum(lamb*abs(x)) 
+        return np.sum(lamb*abs(np.array(x))) 
         
     
     def step_loss(self,last_transmission,transmission):

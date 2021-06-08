@@ -76,7 +76,7 @@ def func_to_minimize(x,table): #x len 8
         result.append(QPC.transmission())
     
     
-    val=stairs.deriv_metric_zeros1(result)
+    val=stairs.deriv_metric_zeros1(result)+stairs.L_1_regularization(voltages,0.01)
     
     key=table['next_key']
     table['next_key']+=1
@@ -89,5 +89,5 @@ def func_to_minimize(x,table): #x len 8
 # func_to_minimize(np.zeros(9),baseline)
 #%%
 
-xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.zeros(9),stop_time=10*3600,options={'tolx':1e-3})
+xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.zeros(9),stop_time=44*3600,options={'tolx':1e-3})
 

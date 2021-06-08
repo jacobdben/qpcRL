@@ -4,9 +4,9 @@ import pickle
 import json
 
 
-save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data"
+#save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data"
 # save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/Simulation"
-# save_data_path="/nbi/home/zrm611/projects/cma-es/saved_data"
+save_data_path="/nbi/user-scratch/f/fxg433/projects/saved_data2"
 # save_data_path="F:/qcodes_data/BBQPC_2021/saved_data"
 # save_data_path="F:/qcodes_data/BBQPC2_2021/saved_data"
 Vs=['V%i'%i for i in range(1,12)]
@@ -81,18 +81,18 @@ class datahandler():
         else:
             self.data_path=data_path+'/'
             
-        self.fname=experiment_name+".pkl"
+        #self.fname=experiment_name+".pkl"
         
-        if self.fname in list(os.walk(self.data_path))[0][2]:
-            self.dict=self.load_dict()
-            if QPC!=None:
-                for key in parameters:
-                    if not self.dict[key]==QPC.__dict__[key]:
-                        raise Exception("Parameters do not match at key: "+key +" ,with {} in existing dict, and {} in QPC.__dict__".format(self.dict[key],QPC.__dict__[key]))
+        #if self.fname in list(os.walk(self.data_path))[0][2]:
+        #    self.dict=self.load_dict()
+        #    if QPC!=None:
+        #        for key in parameters:
+        #            if not self.dict[key]==QPC.__dict__[key]:
+        #                raise Exception("Parameters do not match at key: "+key +" ,with {} in existing dict, and {} in QPC.__dict__".format(self.dict[key],QPC.__dict__[key]))
                         
-        else:
-            if not QPC == None:
-                self.dict=self.new_dict(QPC)
+        #else:
+        #    if not QPC == None:
+        #        self.dict=self.new_dict(QPC)
 
         
     def save_datahandler(self,):

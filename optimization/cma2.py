@@ -95,10 +95,11 @@ def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=Non
     args_send.extend(args)
 
     options_send={'maxfevals':maxfevals}
-    for key in options:
-        options_send[key]=options[key]
+    # for key in options:
+    es.opts.set(options) # this change is untested so far
+    es.opts.set(options_send )
         
-    es.optimize(func_to_minimize,args=[datadict],callback=[callback_time],options=options_send)
+    es.optimize(func_to_minimize,args=[datadict],callback=[callback_time])#,options=options_send) see comment above
     
     with open(folder+"stopping_criterion.txt",mode='a+') as file_object:
         print(es.stop(),file=file_object)

@@ -35,7 +35,7 @@ def check_bound(bound,x):
 def simple_new_point(x,bounds):
     penalty=0
     for i in range(len(x)):
-        x[i],p_temp=check_bound(bounds[i],x[i])
+        x[i],p_temp=check_bound(bounds,x[i])
         penalty+=p_temp
         
     return x, penalty

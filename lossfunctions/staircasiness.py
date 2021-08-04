@@ -41,7 +41,32 @@ def make_gauss_fit(staircase,plateau,plot=False):
     
 
 
-
+def make_staircase_fit(staircase,plot=False):
+    def staircase_func(h,w,a,x):
+        return h*(1/2*np.cosh(a/2)/np.sinh(a/2)*np.tanh(a*((x/w-np.floor(x/w))-0.5)) + 1/2 + np.floor(x/w))
+    
+    def linear_func(a2,b,x):
+        return a2*x+b
+    
+    def fit_func(x,height,width,a,a2,b,xs,xs2):
+        if isinstance(x, np.ndarray):
+            datalist=[]
+            datalist.extend(np.zeros(len(x[x<xs])))
+            datalist.extend(staircase_func(height,width,a,x[(xs<=x) & (x<xs2)]))
+            datalist.extend(linear_func(a2,b,x[x>=xs2]))
+            return datalist
+        # elif isinstance(x,float):
+        #     if x<xs:
+        #         return staircase_func(height,width,a,x)
+        #     else:
+        #         return linear_func(a2,b,x)
+            
+    popt,pcov = curve_fit(fit_func,np.arange(len(staircase)),staircase,p0=[2.5,30,300,0.2,-15,25,175])
+    if plot:
+        fig,ax=plt.subplots()
+        ax.plot(fit_func(np.arange(len(staircase)),*popt))
+        ax.plot(staircase)
+    return popt,pcov
 
 class staircasiness():
     def __init__(self,delta=0.05,last_step=20,favorite=100):
@@ -84,6 +109,42 @@ class staircasiness():
         res/=len(staircase)-zero_count
         return res
     
+    def deriv_metric_cube_addsmall(self,staircase):
+        res=0
+        for i in range(len(staircase)-1):
+            res += np.cbrt(np.abs(staircase[i+1]-staircase[i])+0.01)
+
+        return res
+    
+    def stairLossFunk(self,staircase):
+        Res=0
+        for i in range(len(staircase)-1):
+              Res+=np.cbrt(np.abs(staircase[i+1]-staircase[i])+0.01)
+        
+        P_zeros=len(np.where(staircase<1e-5)[0])/len(staircase)
+        
+        return Res*P_zeros
+    
+    def stairLossFunk2(self,staircase):
+        res=0
+        for i in range(len(staircase)-1):
+              res+=np.cbrt(np.abs(staircase[i+1]-staircase[i])+0.01)
+        
+        P_not_zeros=len(np.where(staircase>1e-5)[0])/len(staircase)
+        
+        return res/(P_not_zeros+1)
+    
+    def deriv_metric_cube_addsmall_zeros(self,staircase):
+        res=0
+        # zero_count=0
+        for i in range(len(staircase)-1):
+            if staircase[i]<=1e-5: # added afterwards
+                continue
+            res += np.cbrt(np.abs(staircase[i+1]-staircase[i])+0.01)
+        # res*=len(np.where(staircase<=1e-3)[0])/len(staircase)
+        res/=np.cbrt(np.max(staircase))
+        return res
+    
     def deriv_metric_original(self,staircase):
         res=0
         for i in range(len(staircase)-1):
@@ -92,6 +153,57 @@ class staircasiness():
         res /= np.sqrt(np.max(staircase)-np.min(staircase))
         
         return res
+    
+    def deriv_metric_cube_zeros(self,staircase):
+        res=0
+        zero_count=0
+        for i in range(len(staircase)-1):
+            res += np.cbrt(np.abs(staircase[i+1]-staircase[i]))
+            if staircase[i]<=1e-5: # added afterwards
+                    zero_count+=1
+                
+        res /= np.sqrt(np.max(staircase)-np.min(staircase))
+        res/=len(staircase)-zero_count
+        return res
+    
+    def deriv_metric_cube_mask(self,staircase,maskvals=[0.1,20]):
+        mask=np.where((maskvals[0]<=staircase) & (staircase<=maskvals[1]))[0]
+        mstaircase=staircase[mask]
+        res=0
+        for i in range(len(mstaircase)-1):
+            res += np.cbrt(np.abs(mstaircase[i+1]-mstaircase[i]))
+             
+        res /= np.sqrt(np.max(staircase)-np.min(staircase))
+        
+        return res
+    
+    def window_loss(self,staircase,p=0.2, noise_eps=0):
+        if staircase[0]>10:
+            return 2
+        small = np.where(staircase < 1e-2)[0]
+        large = np.where(staircase > 10)[0]
+        if small.shape[0] > 0:
+            small = small[-1]
+        else:
+            small = 0
+        
+        if large.shape[0] > 0:
+            large = large[0]
+        else:
+            large = staircase.shape[0]
+        
+        numel = large - small
+        diff = (staircase[large - 1] - staircase[small])
+        res = 0
+        for i in range(small, large - 1):
+            x = (staircase[i+1] - staircase[i])/diff
+            res += np.abs(x+noise_eps/numel)**p #
+            
+        if numel==1:
+            return 2
+        else:
+            return res * (1.0/(numel-1))**(1-p)
+    
     
     def L_1_regularization(self,x,lamb):
         return lamb*np.sum(abs(np.array(x))) 

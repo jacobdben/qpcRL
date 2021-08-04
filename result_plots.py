@@ -5,14 +5,14 @@ import matplotlib.pyplot as plt
 from optimization.fourier.fourier_modes_hardcoded import fourier_to_potential, plot_fourier_modes
 from lossfunctions.staircasiness import staircasiness
 from optimization.newpoint import new_point
-from simulations.pixel_array_sim_2 import pixelarrayQPC
+# from simulations.pixel_array_sim_2 import pixelarrayQPC
     
 stairs=staircasiness()
 
-QPC=pixelarrayQPC()
-QPC.U0=0.1
-QPC.V1=-4
-QPC.v11=-4
+# QPC=pixelarrayQPC()
+# QPC.U0=0.1
+# QPC.V1=-4
+# QPC.v11=-4
 
 def plot_losses(losses,losslabels,iter_loss=False):
     fig,ax=plt.subplots()
@@ -189,19 +189,24 @@ def recalculate_loss(staircases):
 
 if __name__=="__main__":    
     # things to plot
-    plot_loss=False
-    plot_staircase=False
-    plot_voltage=False
+    plot_loss=True
+    plot_staircase=True
+    plot_voltage=True
+    plot_modes=True
+    
+    #only on simulator
     plot_potential=False
     plot_current=False
-    plot_modes=False
-    plot_wave_func_gif=True
+
+    plot_wave_func_gif=False
     
     #cluster start_point runs
     common_voltages=np.linspace(-3,0,100)
-    cluster_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data_cluster"
-    run_ids=np.arange(14,18)
-    data_dicts=[load_cma_data(run_id,cluster_data_path) for run_id in run_ids]
+    # cluster_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data_cluster"
+    # run_ids=np.arange(14,18)
+    run_ids=[4]
+    t7_data_path="F:\qcodes_data\BBQPC3\saved_data"
+    data_dicts=[load_cma_data(run_id,t7_data_path) for run_id in run_ids]
     labels=[str(run_id) for run_id in run_ids]
     # plot_everything(data_dicts,data_labels,iter_loss=True,offset=1)
 
@@ -227,7 +232,7 @@ if __name__=="__main__":
     staircases=staircases+starting_staircase
     
     voltages=[data[i,2][best_run] for i,best_run in enumerate(best_runs2)] 
-    xs=[(data[i,3][best_run],i) for i,best_run in enumerate(best_runs2) if data[i,3]!=None] 
+    xs=[(data[i,3][best_run],i) for i,best_run in enumerate(best_runs2)] 
     
     
     if plot_loss:
@@ -256,9 +261,7 @@ if __name__=="__main__":
             fig.suptitle(labels[i],fontsize=18)
             
             # check modes give correct voltages
-            # plt.figure()
-            # plt.title(labels[i])
-            bounds=(-1,1)
+            bounds=(-0.1,0.1)
             check_voltage=fourier_to_potential(x)[1]
             
             print(new_point(check_voltage.ravel(),bounds)[0]-np.array(voltages[i]))

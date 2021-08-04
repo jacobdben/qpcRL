@@ -105,8 +105,6 @@ def sweep_gates(param_sets: _BaseParameter,
                             param_sets[j].set(values[j])
                             param_set_output.append((param_sets[j],values[j]))
                         
-                    if i==0:
-                        time.sleep(delay*5) #extra delay for the first point, to reduce noice specifically for that point
                     time.sleep(delay)
                     result=param_meas.get()
                     results.append(result)
@@ -122,7 +120,7 @@ def sweep_gates(param_sets: _BaseParameter,
 
    
     # if do_plot is True:
-    #     ax, cbs = _save_image(datasaver)
+    ax, cbs = _save_image(datasaver)
 
     if interrupted:
         raise KeyboardInterrupt
@@ -145,10 +143,10 @@ def _save_image(datasaver) -> AxesTupleList:
     """
     plt.ioff()
     dataid = datasaver.run_id
-    start = time.time()
+    # start = time.time()
     axes, cbs = plot_by_id(dataid)
-    stop = time.time()
-    print(f"plot by id took {stop-start}")
+    # stop = time.time()
+    # print(f"plot by id took {stop-start}")
 
     mainfolder = config.user.mainfolder
     experiment_name = datasaver._dataset.exp_name

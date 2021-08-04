@@ -180,6 +180,9 @@ class staircasiness():
     def window_loss(self,staircase,p=0.2, noise_eps=0):
         if staircase[0]>10:
             return 2
+        if (staircase<10).all():
+            return 2
+        
         small = np.where(staircase < 1e-2)[0]
         large = np.where(staircase > 10)[0]
         if small.shape[0] > 0:

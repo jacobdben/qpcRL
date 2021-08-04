@@ -12,7 +12,7 @@ import time
 
 start=-3
 stop=0
-steps=100
+steps=30
 
 # Parameters for QPC
 disorder=0.1
@@ -53,7 +53,8 @@ def func_to_minimize(x,table): #x len 8
         result.append(QPC.transmission())
     
     
-    val=stairs.deriv_metric_zeros1(result)+stairs.L_1_regularization(x0, 0.001)+stairs.L_2_regularization(x0, 0.001)
+    # val=stairs.deriv_metric_zeros1(result)+stairs.L_1_regularization(x0, 0.001)+stairs.L_2_regularization(x0, 0.001)
+    val=stairs.simple_plateau(result,2)+stairs.L_1_regularization(x0, 0.001)+stairs.L_2_regularization(x0, 0.001)
     
     key=table['next_key']
     table['next_key']+=1
@@ -66,7 +67,7 @@ def func_to_minimize(x,table): #x len 8
 
 #%% start the optimization
 
-xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.random.uniform(-0.5,0.5,8),stop_time=48*3600,options={'tolx':1e-3})
+xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.random.uniform(-0.5,0.5,8),stop_time=3600,options={'tolx':1e-3})
    
 
 #%% resume the optimization

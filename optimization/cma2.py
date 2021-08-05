@@ -17,21 +17,6 @@ def folder_name(data_path):
 
 
 def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=0.5,stop_time=None,callbacks=[None],args=[],options={}):
-    if not stop_time==None:
-        def callback_time(es):
-            try:
-                cur_time=es.time_last_displayed
-            except AttributeError:
-                return
-            if cur_time>=stop_time:
-                es.stop()['time']=cur_time
-        
-        if callbacks==None:
-            callbacks=[callback_time]
-        else:
-            callbacks.append(callback_time)
-        
-    
     #make a seperate folder for this run
     data_path=datahandler.data_path
     newfolder=folder_name(data_path)
@@ -50,6 +35,8 @@ def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=
     options_send={'maxfevals':maxfevals,'verb_filenameprefix':newfolder}
     for key in options:
         options_send[key]=options[key]
+    if not stop_time==None:
+        options_send['timeout']=stop_time
         
     x,es=cma.fmin2(func_to_minimize,start_point,sigma0=sigma,args=args_send,options=options_send,callback=callbacks)
 

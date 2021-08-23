@@ -235,7 +235,69 @@ class staircasiness():
                 return 10
             else:
                 return abs(ceil-transmission)
+            
+    def window_histogram(self,staircase,linear_factor=0,p=3,plot=False,ax=None):
+        if not ((staircase>1e-2) & (staircase<11)).any():
+            return 1e4
+        
+        if not ((staircase<1e-2)).any():
+            return 1e4
+        
+        if not ((staircase>11)).any():
+            return 1e4
+        
+        mask=(staircase>1e-2) & (staircase<11)
+        staircase=staircase[mask]
+        
+        num_bins=100
+    
+        hist,bins=np.histogram(staircase,num_bins,density=True)
+        
+        width=bins[1]-bins[0]
+        
+        loss=np.sum(abs(np.diff(hist*width)+linear_factor)**p)
+        if plot:
+            if ax!=None:
+                bin_mids=[(bins[i]+bins[i+1])/2 for i in range(len(bins)-1)]
+                ax.plot(bin_mids,hist*width,label="%.3f"%loss)
+                
+        return 1/loss
 
+    def multiple_windows_histogram(self,staircase,linear_factor=0,p=3,plot=False,ax=None):
+        if not ((staircase>1e-2) & (staircase<11)).any():
+            return 1e4
+        
+        if not ((staircase<1e-2)).any():
+            return 1e4
+        
+        if not ((staircase>11)).any():
+            return 1e4
+        
+        windows=np.arange(1,min(np.max(staircase),12),2)
+        loss=0
+        for i in range(len(windows)-1):
+
+            mask=(staircase>=windows[i]) & (staircase<windows[i+1])
+            if not mask.any():
+                continue
+
+            num_bins=20
+        
+            hist,bins=np.histogram(staircase[mask],num_bins,density=True)
+            
+            
+            width=bins[1]-bins[0]
+            plt.figure()
+            plt.plot(hist*width)
+
+            loss+=np.sum(abs(np.diff(hist*width)+linear_factor)**p)
+
+        # if plot:
+        #     if ax!=None:
+        #         bin_mids=[(bins[i]+bins[i+1])/2 for i in range(len(bins)-1)]
+        #         ax.plot(bin_mids,hist*width,label="%.3f"%loss)
+                
+        return 1/loss
             
     
 
@@ -245,12 +307,12 @@ class staircasiness():
 
 if __name__=="__main__":   
         
-    y=np.array([0.97460391, 0.96824428, 0.97574253, 0.9857496 , 1.0071998 ,
+    y=np.array([0,0.97460391, 0.96824428, 0.97574253, 0.9857496 , 1.0071998 ,
                   1.38298989, 1.97786701, 1.98512252, 1.97990789, 1.98450759,
                   2.02895031, 2.93185717, 2.97778235, 2.97963773, 2.98609815,
-                  3.42125114, 3.9582292 , 3.9812698 , 4.03072006, 4.9354933 ])
+                  3.42125114, 3.9582292 , 3.9812698 , 4.03072006, 4.9354933,13 ])
     
-
+    y=np.linspace(0,15,100)
 
 
 
@@ -262,8 +324,8 @@ if __name__=="__main__":
     # staircase=np.load(fname)
     staircase=y
     t=staircasiness(delta=0.1,last_step=int(np.ceil(np.max(staircase))))
-    test = t.histogram(staircase)
-    test2= t.gaussian_fit(staircase)
+    test = t.window_histogram(staircase)
+    test2= t.multiple_windows_histogram(staircase)
 
     # results=[]
     # for i in np.arange(0,len(y)-1):
@@ -277,8 +339,8 @@ if __name__=="__main__":
     plot=True
     if plot:
         plt.figure()
-        for binline in t.bins:
-            plt.plot([0,len(staircase)],[binline,binline],'k--',alpha=0.5)
+        # for binline in t.bins:
+        #     plt.plot([0,len(staircase)],[binline,binline],'k--',alpha=0.5)
         plt.plot(staircase,'-*')
         plt.xticks([])
         plt.yticks([1,2,3,4],['1','2','3','4'])

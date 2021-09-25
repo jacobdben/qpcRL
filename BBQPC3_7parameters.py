@@ -67,9 +67,9 @@ Conductance = qc.Parameter(name='g',label='Conductance',unit=r'$e^2/h$', get_cmd
 bounds=(-1,0.3)
 pfactor = 0.001
 
-start = -1.1
-stop = -1.5
-points = 200
+start = -1
+stop = -1.8
+points = 400
 wait = 0.1
 
 
@@ -116,12 +116,12 @@ def func_to_minimize(x,table): #x len 7
 #%%
 
 # set bias on 1 ohmic with qdac
-qdac.BNC8(0.00015)
+qdac.BNC8(0.000125)
 lockin2.amplitude(0.06) #40uV 
 outer_gates(-2)
 time.sleep(10)
 
-xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.zeros(7),stop_time=16*3600,options={'tolx':1e-3})
+xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.zeros(7),stop_time=18*3600,options={'tolx':1e-3})
 
 #%%
 # xbest,es,run_id=resume_cma(func_to_minimize,10,dat,stop_time=14*3600,options={'tolx':1e-3})
@@ -139,7 +139,7 @@ def load_dataids(outcmaes_run):
 def iter_loss(loss,runs_per_iteration=7):
     return [np.min(loss[i*7:i*7+7]) for i in range(int(len(loss)/runs_per_iteration))]
                    
-data_dict=load_dataids(27) #run id
+data_dict=load_dataids(45) #run id
 losses=[]
 dataids_list=[]
 voltages=[]

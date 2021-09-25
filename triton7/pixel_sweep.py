@@ -13,7 +13,7 @@ from qcodes.dataset.data_set import load_by_id
 from qcodes import config
 import sys
 sys.path.append("../..")
-from export_functions import export_by_id, export_by_id_pd, export_snapshot_by_id
+from triton7.export_functions import export_by_id, export_by_id_pd, export_snapshot_by_id
 import datetime
 
 

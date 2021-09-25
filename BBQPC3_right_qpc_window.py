@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Aug  5 11:16:08 2021
+
+@author: T7
+"""
+
 import numpy as np
 
 from lossfunctions.staircasiness import staircasiness
@@ -46,12 +53,12 @@ def parameter_pixels_set(val):
     
 parameter_pixels = qc.Parameter(name='BNC_12_19_5_18_48_3_50',label='BNC_12_19_5_18_48_3_50',unit='V', set_cmd=parameter_pixels_set)
 
-def set_15_2(val):
-    qdac.BNC15(val)
-    qdac.BNC2(val)
-  
-gate_15_2 = qc.Parameter(name='BNC_15_and_2',label='BNC15,2',unit='V', set_cmd=set_15_2)
 
+def set_50_19(val):
+    qdac.BNC50(val)
+    qdac.BNC19(val)
+  
+gate_50_19 = qc.Parameter(name='BNC_50_and_19',label='BNC50,19',unit='V', set_cmd=set_50_19)
 
 
 def Conductance_get():
@@ -94,21 +101,21 @@ def func_to_minimize(x,table): #x len 8
     voltages_send=vals+window_move[0]
     
     #implement going to 0 and waiting
-    gate_15_2(0)
+    gate_50_19(0)
     parameter_pixels(0)
     time.sleep(20)
     # set the pixels
     for i in range(len(pixel_gates_list)):
         pixel_gates_list[i](voltages[i])
-    gate_15_2(voltages_send[0])
+    gate_50_19(voltages_send[0])
     time.sleep(20)
     
     
     
-    result,dataid=sweep_gates([gate_15_2],voltages_send,wait,Conductance)
+    result,dataid=sweep_gates([gate_50_19],voltages_send,wait,Conductance)
     
     #np.flip result here because we measure towards pinch off
-    val=stairs.window_loss(np.flip(result))#+stairs.L_1_regularization(voltages, 0.001)+stairs.L_2_regularization(voltages, 0.001)
+    val=stairs.multiple_windows_histogram(np.flip(result))#+stairs.L_1_regularization(voltages, 0.001)+stairs.L_2_regularization(voltages, 0.001)
     
     key=table['next_key']
     table['next_key']+=1
@@ -121,15 +128,15 @@ def func_to_minimize(x,table): #x len 8
 #%%
 
 # set bias on 1 ohmic with qdac
-qdac.BNC8(0.000125)
+qdac.BNC8(0.00015)
 lockin2.amplitude(0.06) #40uV 
 outer_gates(-2)
 time.sleep(10)
 
-xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.zeros(8),stop_time=20*3600,options={'tolx':1e-3})
+xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.zeros(8),stop_time=24*3600,options={'tolx':1e-3})
 
 #%%
-xbest,es,run_id=resume_cma(func_to_minimize,46,dat,stop_time=14*3600+1253*60,options={'tolx':1e-3})
+# xbest,es,run_id=resume_cma(func_to_minimize,10,dat,stop_time=14*3600,options={'tolx':1e-3})
   
 #%% plot some results
 import matplotlib
@@ -144,16 +151,18 @@ def load_dataids(outcmaes_run):
 def iter_loss(loss,runs_per_iteration=7):
     return [np.min(loss[i*7:i*7+7]) for i in range(int(len(loss)/runs_per_iteration))]
                    
-data_dict=load_dataids(46) #run id
+data_dict=load_dataids(40) #run id
 losses=[]
 dataids_list=[]
 voltages=[]
 staircases=[]
+xaxes=[]
 for key in range(len(data_dict['measurements'])):
     losses.append(data_dict['measurements'][str(key)]['loss'])
     dataids_list.append(data_dict['measurements'][str(key)]['dataid'])
     voltages.append(data_dict['measurements'][str(key)]['voltages'])
     staircases.append(data_dict['measurements'][str(key)]['staircase'])
+    xaxes.append(data_dict['measurements'][str(key)]['xaxis'])
 # loss=[dataiddict[key]['loss'] for key in dataiddict.keys()]
 iter_loss=iter_loss(losses,runs_per_iteration=9)
 #%%
@@ -177,8 +186,9 @@ plot_by_id(dataids_list[np.argmin(losses)],axes=ax,label='best - #' + str(dataid
 ax.plot(vals,data_dict['starting_point']['measurements']['0']['staircase'],label='start - #'+ str(data_dict['starting_point']['measurements']['0']['dataid']) 
         + ' - %.3f'%data_dict['starting_point']['measurements']['0']['loss'])
 fig.legend()
-ax.set_yticks(np.arange(0,26,2))
+ax.set_yticks(np.arange(0,11,2))
 ax.grid(axis='y')
+ax.set_ylim(-1,14)
 
 #%%
 
@@ -227,7 +237,7 @@ voltages_plot[8]=voltages[np.argmin(losses)][6]
 plot_voltages(voltages_plot)
 
 #%%
-iterations=[0,10,20,30]
+iterations=[0,2,4,6]
 mpl.rcParams['figure.dpi']=300
 for iteration in iterations:
     fig,ax=plt.subplots()
@@ -240,14 +250,73 @@ for iteration in iterations:
     plt.tight_layout()
     # plt.tight_layout()
 #%%
-nums=[0,2,300,500,728]
+nums=[0,2,300,500,600]
 fig,ax=plt.subplots()
 for j,i in enumerate(nums):
-    label="{:.3f} : {:.3f} ".format(stairs.deriv_metric_cube_addsmall_zeros(np.flip(staircases[i])),stairs.deriv_metric_cube_addsmall(np.flip(staircases[i])))
-    ax.plot(vals,j+np.array(staircases[i]),label=label)
+    label="{:.3f}".format(losses[i])
+    ax.plot(xaxes[i],np.array(staircases[i]),label=label)
 plt.legend(bbox_to_anchor=(1.05,1))
 plt.tight_layout()
 
+#%%
+def window_histogram(staircase,linear_factor=0.01,p=0.2,plot=True,ax=None):
+    mask=(staircase>1e-2) & (staircase<11)
+    staircase=staircase[mask]
+    
+    num_bins=100
+
+    hist,bins=np.histogram(staircase,num_bins,density=True)
+    bin_mids=[(bins[i]+bins[i+1])/2 for i in range(len(bins)-1)]
+    width=bins[1]-bins[0]
+    
+    loss=np.sum(abs(np.diff(hist*width)+linear_factor)**p)
+    if plot:
+        if ax!=None:
+            ax.plot(bin_mids,hist*width,label="%.3f"%loss)
+            
+    return loss
+    
+
+
+#%%
+fig,ax=plt.subplots()
+ax.plot(xaxes[300],staircases[300])
+
+ax.set_yticks([0,2,4,6,8,10])
+ax.grid(axis='y')
+
+staircase_bad_ex=load_by_id(1917).get_parameter_data('g')['g']['g']
+bad_ex_xaxes=load_by_id(1917).get_parameter_data('BNC_15_and_2')['BNC_15_and_2']['BNC_15_and_2']
+bad_mask=(staircase_bad_ex>1e-2) & (staircase_bad_ex<11)
+staircase_bad_ex=staircase_bad_ex[bad_mask]
+bad_ex_xaxes=bad_ex_xaxes[bad_mask]
+
+
+
+mask=(np.array(staircases[300])>1e-2) & (np.array(staircases[300])<11)
+staircase_ex=np.array(staircases[300])[mask]
+
+
+num_bins=100
+
+hist,bins=np.histogram(staircase_ex,num_bins,density=True)
+bin_mids=[(bins[i]+bins[i+1])/2 for i in range(len(bins)-1)]
+width=bins[1]-bins[0]
+
+linear_factor=0.01
+
+fig2,ax2=plt.subplots()
+ax2.plot(bin_mids,hist*width)
+
+p=0.2
+res=np.sum(abs(np.diff(hist*width)+linear_factor)**p)
+
+
+#%%
+fig,ax=plt.subplots()
+window_histogram(staircase_bad_ex,0.02,0.2,True,ax)
+window_histogram(staircase_ex,0.02,0.2,True,ax)
+fig.legend()
 #%%
 def custom_plot_by_id(dataid,ax=None):
     data=load_by_id(dataid)

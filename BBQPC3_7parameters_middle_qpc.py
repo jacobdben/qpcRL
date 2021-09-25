@@ -69,10 +69,10 @@ Conductance = qc.Parameter(name='g',label='Conductance',unit=r'$e^2/h$', get_cmd
 bounds=(-1,0.3)
 pfactor = 0.001
 
-start = -0.8
-stop = -1.4
-points = 400
-wait = 0.05
+start = 0
+stop = -2
+points = 500
+wait = 0.1
 
 
 vals = np.linspace(start, stop, points)
@@ -97,7 +97,7 @@ def func_to_minimize(x,table): #x len 7
     # set the pixels
     for i in range(len(pixel_gates_list)):
         pixel_gates_list[i](voltages[i])
-    gate_15_2(start)
+    # gate_15_2(start)
     time.sleep(20)
     
     
@@ -123,7 +123,7 @@ lockin2.amplitude(0.06) #40uV
 outer_gates(-2.8)
 time.sleep(10)
 
-xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.zeros(7),stop_time=16*3600,options={'tolx':1e-3})
+xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.zeros(7),stop_time=13*3600,options={'tolx':1e-3})
 
 #%%
 # xbest,es,run_id=resume_cma(func_to_minimize,10,dat,stop_time=14*3600,options={'tolx':1e-3})
@@ -139,20 +139,30 @@ def load_dataids(outcmaes_run):
     return test
 
 def iter_loss(loss,runs_per_iteration=7):
-    return [np.min(loss[i*7:i*7+7]) for i in range(int(len(loss)/runs_per_iteration))]
+    return [np.min(loss[i*runs_per_iteration:i*runs_per_iteration+runs_per_iteration]) for i in range(int(len(loss)/runs_per_iteration))]
                    
-data_dict=load_dataids(33) #run id
+data_dict=load_dataids(35) #run id
 losses=[]
 dataids_list=[]
 voltages=[]
 staircases=[]
+pure_losses=[]
 for key in range(len(data_dict['measurements'])):
     losses.append(data_dict['measurements'][str(key)]['loss'])
     dataids_list.append(data_dict['measurements'][str(key)]['dataid'])
     voltages.append(data_dict['measurements'][str(key)]['voltages'])
     staircases.append(data_dict['measurements'][str(key)]['staircase'])
+    pure_losses.append(data_dict['measurements'][str(key)]['deriv_metric'])
 # loss=[dataiddict[key]['loss'] for key in dataiddict.keys()]
 iter_loss=iter_loss(losses,runs_per_iteration=9)
+#%%
+best_staircase=staircases[np.argmin(pure_losses)]
+print(stairs.window_loss(np.flip(best_staircase)))
+# plt.plot(np.flip(best_staircase))
+plt.figure()
+plt.plot(pure_losses)
+plt.plot(losses)
+
 #%%
 #plot the pure losses
 plt.figure()
@@ -224,7 +234,7 @@ voltages_plot[8]=voltages[np.argmin(losses)][6]
 plot_voltages(voltages_plot)
 
 #%%
-iterations=[0,10,20,30]
+iterations=[0,5,9,10]
 mpl.rcParams['figure.dpi']=300
 for iteration in iterations:
     fig,ax=plt.subplots()

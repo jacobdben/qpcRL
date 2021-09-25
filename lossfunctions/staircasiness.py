@@ -178,13 +178,15 @@ class staircasiness():
         return res
     
     def window_loss(self,staircase,p=0.2, noise_eps=0):
-        if staircase[0]>10:
+        upper_lim=9
+        lower_lim=1e-2
+        if staircase[0]>upper_lim:
             return 2
-        if (staircase<10).all():
+        if (staircase<upper_lim).all() or (staircase>lower_lim).all():
             return 2
         
-        small = np.where(staircase < 1e-2)[0]
-        large = np.where(staircase > 10)[0]
+        small = np.where(staircase < lower_lim)[0]
+        large = np.where(staircase > upper_lim)[0]
         if small.shape[0] > 0:
             small = small[-1]
         else:
@@ -235,6 +237,67 @@ class staircasiness():
                 return 10
             else:
                 return abs(ceil-transmission)
+            
+    def window_histogram(self,staircase,linear_factor=0,p=3,plot=False,ax=None):
+        if not ((staircase>1e-2) & (staircase<11)).any():
+            return 1e4
+        
+        if not ((staircase<1e-2)).any():
+            return 1e4
+        
+        if not ((staircase>11)).any():
+            return 1e4
+        
+        mask=(staircase>1e-2) & (staircase<11)
+        staircase=staircase[mask]
+        
+        num_bins=100
+    
+        hist,bins=np.histogram(staircase,num_bins,density=True)
+        
+        width=bins[1]-bins[0]
+        
+        loss=np.sum(abs(np.diff(hist*width)+linear_factor)**p)
+        if plot:
+            if ax!=None:
+                bin_mids=[(bins[i]+bins[i+1])/2 for i in range(len(bins)-1)]
+                ax.plot(bin_mids,hist*width,label="%.3f"%loss)
+                
+        return 1/loss
+
+    def multiple_windows_histogram(self,staircase,linear_factor=0,p=3,plot=False,ax=None):
+        if not ((staircase>1e-2) & (staircase<11)).any():
+            return 1e4
+        
+        if not ((staircase<1e-2)).any():
+            return 1e4
+        
+        if not ((staircase>11)).any():
+            return 1e4
+        
+        windows=np.arange(1,min(np.max(staircase),12),2)
+        loss=0
+        for i in range(len(windows)-1):
+
+            mask=(staircase>=windows[i]) & (staircase<windows[i+1])
+            if not mask.any():
+                continue
+
+            num_bins=20
+        
+            hist,bins=np.histogram(staircase[mask],num_bins,density=True)
+            
+            
+            width=bins[1]-bins[0]
+            
+            loss+=np.sum(abs(np.diff(hist*width)+linear_factor)**p)
+
+        # if plot:
+        #     if ax!=None:
+        #         bin_mids=[(bins[i]+bins[i+1])/2 for i in range(len(bins)-1)]
+        #         ax.plot(bin_mids,hist*width,label="%.3f"%loss)
+                
+        return 1/loss
 
             
     

@@ -53,7 +53,7 @@ def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=
     with open(newfolder+"datadict.txt",mode='w') as file_object:
         file_object.write(json.dumps(datadict))
         
-    return x,es, int(newfolder[-2:-1])
+    return x,es, int(newfolder[-3:-1])
 
 
 def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=None,callbacks=[None],args=[],options={}):
@@ -81,12 +81,12 @@ def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=Non
     args_send=[datadict]
     args_send.extend(args)
 
-    options_send={'maxfevals':maxfevals}
+    options_send={'maxfevals':maxfevals,'timeout':stop_time}
     # for key in options:
     es.opts.set(options) # this change is untested so far
     es.opts.set(options_send )
         
-    es.optimize(func_to_minimize,args=[datadict],callback=[callback_time])#,options=options_send) see comment above
+    es.optimize(func_to_minimize,args=[datadict])#,options=options_send) see comment above
     
     with open(folder+"stopping_criterion.txt",mode='a+') as file_object:
         print(es.stop(),file=file_object)

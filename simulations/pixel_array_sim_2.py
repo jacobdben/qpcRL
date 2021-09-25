@@ -6,7 +6,7 @@ from cmath import exp
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
-from simulations.new_disorder import make_disorder, make_pixel_disorder
+from .new_disorder import make_disorder, make_pixel_disorder
 from types import SimpleNamespace
 import scipy.sparse.linalg as sla
 
@@ -54,7 +54,7 @@ def make_gates(distance_to_gate=5,left=30,right=50,spacing=2.5,W=80,L=80,gates_o
     return gates
  
 #standard size   
-if True:
+if False:
     W=70
     L=60
     allgatedims=make_gates(left=20,right=40,W=W,L=L,spacing=2,gates_outside=10)
@@ -135,7 +135,7 @@ class pixelarrayQPC():
         self.t=1
         
         
-        self.V1=-4
+        self.V1=-2
         
         self.V2=0
         self.V3=0
@@ -147,7 +147,7 @@ class pixelarrayQPC():
         self.V9=0
         self.V10=0
         
-        self.V11=-4
+        self.V11=-2
 
 
         

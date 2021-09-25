@@ -6,7 +6,8 @@ from cmath import exp
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
-from simulations.new_disorder import make_disorder, make_pixel_disorder
+
+from .new_disorder import make_disorder, make_pixel_disorder
 from types import SimpleNamespace
 import scipy.sparse.linalg as sla
 

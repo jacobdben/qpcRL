@@ -12,10 +12,10 @@ import time
 
 start=-7
 stop=5
-steps=100
+steps=400
 
 # Parameters for QPC
-disorder=0.1
+disorder=0.3
 outer_gates=-12
 B_field=0
 energy=3
@@ -64,10 +64,18 @@ def func_to_minimize(x,table): #x len 8
     return val+penalty*pfactor
 
 
+# result=[]
+# for avg in common_voltages:
+#     QPC.set_all_pixels(avg)
+#     result.append(QPC.transmission())
+
+# plt.figure()
+# plt.plot(result)
+
 
 #%% start the optimization
 
-xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.random.uniform(-0.5,0.5,8),stop_time=0.5*3600,options={'tolx':1e-3})
+xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.zeros(8),stop_time=48*3600,options={'tolx':1e-3})
    
 
 #%% resume the optimization
@@ -77,103 +85,103 @@ xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.random.uniform(
 
 #%% plot some results
 #%% plot some results
-import matplotlib
-matplotlib.rcParams['figure.dpi']=200
+# import matplotlib
+# matplotlib.rcParams['figure.dpi']=200
 
-import json
-def load_dataids(outcmaes_run):
-    with open("C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data/outcmaes/{}/datadict.txt".format(outcmaes_run)) as file:
-        test=json.load(file)
-    return test
+# import json
+# def load_dataids(outcmaes_run):
+#     with open("C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data/outcmaes/{}/datadict.txt".format(outcmaes_run)) as file:
+#         test=json.load(file)
+#     return test
          
-data_dict=load_dataids(68) #run id
-losses=[]
-dataids_list=[]
-voltages=[]
-staircases=[]
-for key in range(len(data_dict['measurements'])):
-    losses.append(data_dict['measurements'][str(key)]['val'])
-    # dataids_list.append(data_dict['measurements'][str(key)]['dataid'])
-    voltages.append(data_dict['measurements'][str(key)]['voltages'])
-    staircases.append(data_dict['measurements'][str(key)]['staircase'])
-# loss=[dataiddict[key]['loss'] for key in dataiddict.keys()]
-# iter_loss=iter_loss(losses,runs_per_iteration=9)
-#%%
-#plot the pure losses
-plt.figure()
-plt.title('losses')
-plt.xlabel('run')
-plt.ylabel('loss')
-plt.plot(losses)
+# data_dict=load_dataids(68) #run id
+# losses=[]
+# dataids_list=[]
+# voltages=[]
+# staircases=[]
+# for key in range(len(data_dict['measurements'])):
+#     losses.append(data_dict['measurements'][str(key)]['val'])
+#     # dataids_list.append(data_dict['measurements'][str(key)]['dataid'])
+#     voltages.append(data_dict['measurements'][str(key)]['voltages'])
+#     staircases.append(data_dict['measurements'][str(key)]['staircase'])
+# # loss=[dataiddict[key]['loss'] for key in dataiddict.keys()]
+# # iter_loss=iter_loss(losses,runs_per_iteration=9)
+# #%%
+# #plot the pure losses
+# plt.figure()
+# plt.title('losses')
+# plt.xlabel('run')
+# plt.ylabel('loss')
+# plt.plot(losses)
 
 
-#plot the starting point run, and the best achieving run
-fig,ax=plt.subplots()
-# plot_by_id(dataids_list[np.argmin(losses)],axes=ax,label='best - #' + str(dataids_list[np.argmin(losses)]) + ' - %.3f'%np.min(losses))
-ax.plot(common_voltages,data_dict['starting_point']['measurements']['0']['staircase'],label='start') 
-ax.plot(common_voltages,staircases[np.argmin(losses)],label='end')
-fig.legend()
-ax.set_yticks(np.arange(0,14,2))
-ax.grid(axis='y')
+# #plot the starting point run, and the best achieving run
+# fig,ax=plt.subplots()
+# # plot_by_id(dataids_list[np.argmin(losses)],axes=ax,label='best - #' + str(dataids_list[np.argmin(losses)]) + ' - %.3f'%np.min(losses))
+# ax.plot(common_voltages,data_dict['starting_point']['measurements']['0']['staircase'],label='start') 
+# ax.plot(common_voltages,staircases[np.argmin(losses)],label='end')
+# fig.legend()
+# ax.set_yticks(np.arange(0,14,2))
+# ax.grid(axis='y')
 
-#%%
+# #%%
 
-def plot_voltages(voltages=np.arange(9),sweep_gates=None):
-    fig,ax=plt.subplots()
-    h=ax.imshow(voltages.reshape((3,3)))
-    plt.colorbar(h,label='V')
+# def plot_voltages(voltages=np.arange(9),sweep_gates=None):
+#     fig,ax=plt.subplots()
+#     h=ax.imshow(voltages.reshape((3,3)))
+#     plt.colorbar(h,label='V')
     
-    ax.set_title('resulting voltages - sweep gates are white, ID: 7941')
-    ax.set_yticks([0.5,1.5])
-    ax.set_xticks([0.5,1.5])
-    ax.grid(color='black',linewidth=2)
+#     ax.set_title('resulting voltages - sweep gates are white, ID: 7941')
+#     ax.set_yticks([0.5,1.5])
+#     ax.set_xticks([0.5,1.5])
+#     ax.grid(color='black',linewidth=2)
     
-    #this removes the ticks but keep the gridlines
-    ax.xaxis.set_ticklabels([])
-    ax.yaxis.set_ticklabels([])
-    ax.xaxis.set_ticks_position('none')
-    ax.yaxis.set_ticks_position('none')
+#     #this removes the ticks but keep the gridlines
+#     ax.xaxis.set_ticklabels([])
+#     ax.yaxis.set_ticklabels([])
+#     ax.xaxis.set_ticks_position('none')
+#     ax.yaxis.set_ticks_position('none')
     
     
-    #set names
-    ax.text(0-0.5,0-0.4,'BNC12:%.3f'%voltages[0],color='r')
-    ax.text(1-0.5,0-0.4,'BNC15:%.3f'%voltages[1],color='r')
-    ax.text(2-0.5,0-0.4,'BNC19:%.3f'%voltages[2],color='r')
-    ax.text(0-0.5,1-0.4,'BNC5:%.3f'%voltages[3],color='r')
-    ax.text(1-0.5,1-0.4,'BNC18:%.3f'%voltages[4],color='r')
-    ax.text(2-0.5,1-0.4,'BNC48:%.3f'%voltages[5],color='r')
-    ax.text(0-0.5,2-0.4,'BNC3:%.3f'%voltages[6],color='r')
-    ax.text(1-0.5,2-0.4,'BNC2:%.3f'%voltages[7],color='r')
-    ax.text(2-0.5,2-0.4,'BNC50:%.3f'%voltages[8],color='r')
+#     #set names
+#     ax.text(0-0.5,0-0.4,'BNC12:%.3f'%voltages[0],color='r')
+#     ax.text(1-0.5,0-0.4,'BNC15:%.3f'%voltages[1],color='r')
+#     ax.text(2-0.5,0-0.4,'BNC19:%.3f'%voltages[2],color='r')
+#     ax.text(0-0.5,1-0.4,'BNC5:%.3f'%voltages[3],color='r')
+#     ax.text(1-0.5,1-0.4,'BNC18:%.3f'%voltages[4],color='r')
+#     ax.text(2-0.5,1-0.4,'BNC48:%.3f'%voltages[5],color='r')
+#     ax.text(0-0.5,2-0.4,'BNC3:%.3f'%voltages[6],color='r')
+#     ax.text(1-0.5,2-0.4,'BNC2:%.3f'%voltages[7],color='r')
+#     ax.text(2-0.5,2-0.4,'BNC50:%.3f'%voltages[8],color='r')
 
-# voltages_plot is a list with indexes [12,15,19,5,18,48,3,2,50]
-voltages_plot=np.empty(9)
+# # voltages_plot is a list with indexes [12,15,19,5,18,48,3,2,50]
+# voltages_plot=np.empty(9)
 
-voltages_plot[0]=voltages[np.argmin(losses)][0]
-voltages_plot[1]=np.nan
-voltages_plot[2]=voltages[np.argmin(losses)][1]
-voltages_plot[3]=voltages[np.argmin(losses)][2]
-voltages_plot[4]=voltages[np.argmin(losses)][3]
-voltages_plot[5]=voltages[np.argmin(losses)][4]
-voltages_plot[6]=voltages[np.argmin(losses)][5]
-voltages_plot[7]=np.nan
-voltages_plot[8]=voltages[np.argmin(losses)][6]
+# voltages_plot[0]=voltages[np.argmin(losses)][0]
+# voltages_plot[1]=np.nan
+# voltages_plot[2]=voltages[np.argmin(losses)][1]
+# voltages_plot[3]=voltages[np.argmin(losses)][2]
+# voltages_plot[4]=voltages[np.argmin(losses)][3]
+# voltages_plot[5]=voltages[np.argmin(losses)][4]
+# voltages_plot[6]=voltages[np.argmin(losses)][5]
+# voltages_plot[7]=np.nan
+# voltages_plot[8]=voltages[np.argmin(losses)][6]
 
 
-plot_voltages(voltages_plot)
+# plot_voltages(voltages_plot)
 
-#%%
-import matplotlib as mpl
+# #%%
+# import matplotlib as mpl
 
-iterations=[0,1,2]
-mpl.rcParams['figure.dpi']=300
-for iteration in iterations:
-    fig,ax=plt.subplots()
-    for num in np.arange(iteration*10,iteration*10+5):
-        ax.plot(common_voltages,staircases[num],label=' : %.3f'%losses[num])
-    fig.legend(bbox_to_anchor=(0.4,1))
-    ax.set_title('iteration:%i'%iteration)
-    ax.set_yticks(np.arange(0,14,2))
-    ax.grid(axis='y')
-    plt.tight_layout()
+# iterations=[0,1,2]
+# mpl.rcParams['figure.dpi']=300
+# for iteration in iterations:
+#     fig,ax=plt.subplots()
+#     for num in np.arange(iteration*10,iteration*10+5):
+#         ax.plot(common_voltages,staircases[num],label=' : %.3f'%losses[num])
+#     fig.legend(bbox_to_anchor=(0.4,1))
+#     ax.set_title('iteration:%i'%iteration)
+#     ax.set_yticks(np.arange(0,14,2))
+#     ax.grid(axis='y')
+#     plt.tight_layout()
     # plt.tight_layout()

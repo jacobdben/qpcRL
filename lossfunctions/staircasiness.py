@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 Created on Fri Oct 23 15:34:37 2020
 
@@ -299,7 +299,6 @@ class staircasiness():
                 
         return 1/loss
 
-            
     
 
     
@@ -308,12 +307,12 @@ class staircasiness():
 
 if __name__=="__main__":   
         
-    y=np.array([0.97460391, 0.96824428, 0.97574253, 0.9857496 , 1.0071998 ,
+    y=np.array([0,0.97460391, 0.96824428, 0.97574253, 0.9857496 , 1.0071998 ,
                   1.38298989, 1.97786701, 1.98512252, 1.97990789, 1.98450759,
                   2.02895031, 2.93185717, 2.97778235, 2.97963773, 2.98609815,
-                  3.42125114, 3.9582292 , 3.9812698 , 4.03072006, 4.9354933 ])
+                  3.42125114, 3.9582292 , 3.9812698 , 4.03072006, 4.9354933,13 ])
     
-
+    y=np.linspace(0,15,100)
 
 
 
@@ -325,8 +324,8 @@ if __name__=="__main__":
     # staircase=np.load(fname)
     staircase=y
     t=staircasiness(delta=0.1,last_step=int(np.ceil(np.max(staircase))))
-    test = t.histogram(staircase)
-    test2= t.gaussian_fit(staircase)
+    test = t.window_histogram(staircase)
+    test2= t.multiple_windows_histogram(staircase)
 
     # results=[]
     # for i in np.arange(0,len(y)-1):
@@ -340,8 +339,8 @@ if __name__=="__main__":
     plot=True
     if plot:
         plt.figure()
-        for binline in t.bins:
-            plt.plot([0,len(staircase)],[binline,binline],'k--',alpha=0.5)
+        # for binline in t.bins:
+        #     plt.plot([0,len(staircase)],[binline,binline],'k--',alpha=0.5)
         plt.plot(staircase,'-*')
         plt.xticks([])
         plt.yticks([1,2,3,4],['1','2','3','4'])

@@ -4,10 +4,9 @@ import pickle
 import json
 
 
-#save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data"
-# save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/Simulation"
+save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data"
 # save_data_path="/nbi/user-scratch/f/fxg433/projects/saved_data2"
-save_data_path="F:/qcodes_data/BBQPC3/saved_data"
+# save_data_path="F:/qcodes_data/BBQPC3/saved_data"
 # save_data_path="F:/qcodes_data/BBQPC_2021/saved_data"
 # save_data_path="F:/qcodes_data/BBQPC2_2021/saved_data"
 Vs=['V%i'%i for i in range(1,12)]

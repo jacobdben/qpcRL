@@ -10,15 +10,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
-start=-3
-stop=0
-steps=30
+start=-7
+stop=5
+steps=100
 
 # Parameters for QPC
 disorder=0.1
-outer_gates=-4
+outer_gates=-12
 B_field=0
-energy=2
+energy=3
 
 # Parameters for optimization algorithm
 bounds=(-1,1)
@@ -53,13 +53,13 @@ def func_to_minimize(x,table): #x len 8
         result.append(QPC.transmission())
     
     
-    # val=stairs.deriv_metric_zeros1(result)+stairs.L_1_regularization(x0, 0.001)+stairs.L_2_regularization(x0, 0.001)
-    val=stairs.simple_plateau(result,2)+stairs.L_1_regularization(x0, 0.001)+stairs.L_2_regularization(x0, 0.001)
+    val=stairs.multiple_windows_histogram(np.array(result))
+    # val=stairs.simple_plateau(result,2)+stairs.L_1_regularization(x0, 0.001)+stairs.L_2_regularization(x0, 0.001)
     
     key=table['next_key']
     table['next_key']+=1
     
-    table['measurements'][key]={'val':val+penalty*pfactor,'staircase':result,'x':x0,'voltages':voltages.ravel().tolist()}
+    table['measurements'][key]={'loss':val+penalty*pfactor,'staircase':result,'x':x0,'voltages':voltages.ravel().tolist()}
     
     return val+penalty*pfactor
 
@@ -67,7 +67,7 @@ def func_to_minimize(x,table): #x len 8
 
 #%% start the optimization
 
-xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.random.uniform(-0.5,0.5,8),stop_time=3600,options={'tolx':1e-3})
+xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.random.uniform(-0.5,0.5,8),stop_time=0.5*3600,options={'tolx':1e-3})
    
 
 #%% resume the optimization
@@ -76,66 +76,104 @@ xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.random.uniform(
 
 
 #%% plot some results
-"""
-from datahandling.datahandling import load_cma_data
+#%% plot some results
+import matplotlib
+matplotlib.rcParams['figure.dpi']=200
 
-datadict=load_cma_data(run_id=49) #fourier modes run
-datadict2=load_cma_data(run_id=54) #normal run
-
-loss=[]
-staircases=[]
+import json
+def load_dataids(outcmaes_run):
+    with open("C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data/outcmaes/{}/datadict.txt".format(outcmaes_run)) as file:
+        test=json.load(file)
+    return test
+         
+data_dict=load_dataids(68) #run id
+losses=[]
+dataids_list=[]
 voltages=[]
-xs=[]
-for key in datadict.keys():
-    if not key=='next_key':
-        loss.append(datadict[key]['val'])
-        staircases.append(datadict[key]['staircase'])
-        voltages.append(datadict[key]['voltages'])
-        xs.append(datadict[key]['x'])
+staircases=[]
+for key in range(len(data_dict['measurements'])):
+    losses.append(data_dict['measurements'][str(key)]['val'])
+    # dataids_list.append(data_dict['measurements'][str(key)]['dataid'])
+    voltages.append(data_dict['measurements'][str(key)]['voltages'])
+    staircases.append(data_dict['measurements'][str(key)]['staircase'])
+# loss=[dataiddict[key]['loss'] for key in dataiddict.keys()]
+# iter_loss=iter_loss(losses,runs_per_iteration=9)
+#%%
+#plot the pure losses
+plt.figure()
+plt.title('losses')
+plt.xlabel('run')
+plt.ylabel('loss')
+plt.plot(losses)
 
-loss2=[]
-staircases2=[]
-voltages2=[]
-for key in datadict2.keys():
-    if key!='next_key' and key!='starting_point':
-        loss2.append(datadict2[key]['val'])
-        staircases2.append(datadict2[key]['staircase'])
-        voltages2.append(datadict2[key]['voltages'])
-        
-baseline=datadict2['starting_point']
+
+#plot the starting point run, and the best achieving run
+fig,ax=plt.subplots()
+# plot_by_id(dataids_list[np.argmin(losses)],axes=ax,label='best - #' + str(dataids_list[np.argmin(losses)]) + ' - %.3f'%np.min(losses))
+ax.plot(common_voltages,data_dict['starting_point']['measurements']['0']['staircase'],label='start') 
+ax.plot(common_voltages,staircases[np.argmin(losses)],label='end')
+fig.legend()
+ax.set_yticks(np.arange(0,14,2))
+ax.grid(axis='y')
+
+#%%
+
+def plot_voltages(voltages=np.arange(9),sweep_gates=None):
+    fig,ax=plt.subplots()
+    h=ax.imshow(voltages.reshape((3,3)))
+    plt.colorbar(h,label='V')
     
-best_loss=np.argmin(loss)  
-best_loss2=np.argmin(loss2)  
+    ax.set_title('resulting voltages - sweep gates are white, ID: 7941')
+    ax.set_yticks([0.5,1.5])
+    ax.set_xticks([0.5,1.5])
+    ax.grid(color='black',linewidth=2)
     
-plt.figure()
-plt.plot(loss,label='fourier')
-plt.plot(loss2,label='normal')
-plt.ylabel('loss',fontsize=18)
-plt.xlabel('function call',fontsize=18)
-plt.legend()
+    #this removes the ticks but keep the gridlines
+    ax.xaxis.set_ticklabels([])
+    ax.yaxis.set_ticklabels([])
+    ax.xaxis.set_ticks_position('none')
+    ax.yaxis.set_ticks_position('none')
+    
+    
+    #set names
+    ax.text(0-0.5,0-0.4,'BNC12:%.3f'%voltages[0],color='r')
+    ax.text(1-0.5,0-0.4,'BNC15:%.3f'%voltages[1],color='r')
+    ax.text(2-0.5,0-0.4,'BNC19:%.3f'%voltages[2],color='r')
+    ax.text(0-0.5,1-0.4,'BNC5:%.3f'%voltages[3],color='r')
+    ax.text(1-0.5,1-0.4,'BNC18:%.3f'%voltages[4],color='r')
+    ax.text(2-0.5,1-0.4,'BNC48:%.3f'%voltages[5],color='r')
+    ax.text(0-0.5,2-0.4,'BNC3:%.3f'%voltages[6],color='r')
+    ax.text(1-0.5,2-0.4,'BNC2:%.3f'%voltages[7],color='r')
+    ax.text(2-0.5,2-0.4,'BNC50:%.3f'%voltages[8],color='r')
+
+# voltages_plot is a list with indexes [12,15,19,5,18,48,3,2,50]
+voltages_plot=np.empty(9)
+
+voltages_plot[0]=voltages[np.argmin(losses)][0]
+voltages_plot[1]=np.nan
+voltages_plot[2]=voltages[np.argmin(losses)][1]
+voltages_plot[3]=voltages[np.argmin(losses)][2]
+voltages_plot[4]=voltages[np.argmin(losses)][3]
+voltages_plot[5]=voltages[np.argmin(losses)][4]
+voltages_plot[6]=voltages[np.argmin(losses)][5]
+voltages_plot[7]=np.nan
+voltages_plot[8]=voltages[np.argmin(losses)][6]
 
 
-plt.figure()
-plt.plot(common_voltages,staircases[best_loss],label='fourier: {:.3f}'.format(loss[best_loss]))
-plt.plot(common_voltages,staircases2[best_loss2],label='normal: {:.3f}'.format(loss2[best_loss2]))
-plt.plot(common_voltages,baseline['0']['staircase'],label='no opt: {:.3f}'.format(baseline['0']['val']))
-plt.ylabel('avg voltage',fontsize=18)
-plt.xlabel('conductance',fontsize=18)
+plot_voltages(voltages_plot)
 
-plt.grid()
-plt.legend()
+#%%
+import matplotlib as mpl
 
-plt.figure()
-plt.title('fourier voltages',fontsize=18)
-plt.imshow(np.array(voltages[best_loss]).reshape((3,3)),origin='lower')
-plt.colorbar(label='V')
-
-
-plt.figure()
-plt.title('normal voltages',fontsize=18)
-plt.imshow(np.array(voltages2[best_loss2]).reshape((3,3)),origin='lower')
-plt.colorbar(label='V')
-plt.show()
-
-fig,axes=plot_fourier_modes(xs[best_loss])
-"""
+iterations=[0,1,2]
+mpl.rcParams['figure.dpi']=300
+for iteration in iterations:
+    fig,ax=plt.subplots()
+    for num in np.arange(iteration*10,iteration*10+5):
+        ax.plot(common_voltages,staircases[num],label=' : %.3f'%losses[num])
+    fig.legend(bbox_to_anchor=(0.4,1))
+    ax.set_title('iteration:%i'%iteration)
+    ax.set_yticks(np.arange(0,14,2))
+    ax.grid(axis='y')
+    plt.tight_layout()
+    # plt.tight_layout()

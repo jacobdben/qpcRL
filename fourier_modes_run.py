@@ -10,15 +10,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
-start=-7
-stop=5
+start=-3
+stop=0
 steps=400
 
 # Parameters for QPC
-disorder=0.3
-outer_gates=-12
+disorder=0.2
+outer_gates=-4
 B_field=0
-energy=3
+energy=1
 
 # Parameters for optimization algorithm
 bounds=(-1,1)
@@ -53,7 +53,7 @@ def func_to_minimize(x,table): #x len 8
         result.append(QPC.transmission())
     
     
-    val=stairs.multiple_windows_histogram(np.array(result))
+    val=stairs.stairLossFunk2(np.array(result))
     # val=stairs.simple_plateau(result,2)+stairs.L_1_regularization(x0, 0.001)+stairs.L_2_regularization(x0, 0.001)
     
     key=table['next_key']
@@ -63,14 +63,15 @@ def func_to_minimize(x,table): #x len 8
     
     return val+penalty*pfactor
 
+start_time=time.perf_counter()
+result=[]
+for avg in common_voltages:
+    QPC.set_all_pixels(avg)
+    result.append(QPC.transmission())
 
-# result=[]
-# for avg in common_voltages:
-#     QPC.set_all_pixels(avg)
-#     result.append(QPC.transmission())
-
-# plt.figure()
-# plt.plot(result)
+print('time %.3f'%(time.perf_counter()-start_time))
+plt.figure()
+plt.plot(common_voltages,result)
 
 
 #%% start the optimization

@@ -62,7 +62,7 @@ else:
     #longer
     W=70
     L=120
-    allgatedims=make_gates(left=int(L/2-10),right=int(L/2+10),W=W,L=L,spacing=2)
+    allgatedims=make_gates(left=int(L/2-10),right=int(L/2+10),W=W,L=L,spacing=2,gates_outside=10)
 
 # allgatedims=[gate1dims,gate2dims,gate3dims,gate4dims,gate5dims,gate6dims,gate7dims,gate8dims,gate9dims,gate10dims,gate11dims]
 
@@ -181,21 +181,22 @@ class pixelarrayQPC():
         # Plotting the gates and sites/leads and potential
         if plot:
             fig,ax=plt.subplots()
+            kwant.plot(self.qpc,ax=ax)
             rects=[]
             for gate,dims in enumerate(allgatedims):
-                rect=Rectangle((dims[1],dims[3]),dims[2]-dims[1],dims[4]-dims[3])
+                rect=Rectangle((dims[1],dims[3]),dims[2]-dims[1],dims[4]-dims[3],zorder=999)
                 rects.append(rect)
                 
-                ax.text(x=dims[1],y=dims[3],s=str(gate))
+                # ax.text(x=dims[1],y=dims[3],s=str(gate))
                 
                 
-            pc=PatchCollection(rects, facecolor='green',alpha=1)
+            pc=PatchCollection(rects, facecolor='green',alpha=10)
             ax.add_collection(pc)
             
-            kwant.plot(self.qpc,ax=ax)
+            
             xlims=ax.get_xlim()
             ylims=ax.get_ylim()
-            
+            fig.savefig(r'C:\Users\Torbjørn\Google Drev\UNI\MastersProject\Thesis\Figures\QPC chapter\algorithm\lattice.pdf',format='pdf')
             #copy paste of plot potential section
             bounds=((0,L),(0,W))
             fig,ax=plt.subplots()
@@ -234,7 +235,7 @@ class pixelarrayQPC():
             i+=1
         h=ax.imshow(vals.T,origin='lower',extent=(bounds[0][0],bounds[0][1],bounds[1][0],bounds[1][1]))
         plt.colorbar(h)
-        return h
+        return fig,ax,vals
         
     def plot_potential(self,bounds=((0,L),(0,W)),ax=None):
         if ax is None:
@@ -304,7 +305,7 @@ class pixelarrayQPC():
             total=np.sum(abs(scattering_wf1)**2, axis=0)+np.sum(abs(scattering_wf2)**2, axis=0)
             
             h=ax.imshow(total.reshape((L,W)).T,origin='lower',cmap='inferno')
-            return ax,h
+            return fig,ax,h
         scattering_wf = wfs(lead)  # all scattering wave functions from lead "lead"
         if self_plot:
             h=ax.imshow(np.sum(abs(scattering_wf)**2, axis=0).reshape((L,W)).T,origin='lower',cmap='inferno')
@@ -312,25 +313,31 @@ class pixelarrayQPC():
         
             
         # kwant.plotter.map(self.fqpc, np.sum(abs(scattering_wf)**2, axis=0),ax=ax)
-        return ax,h
+        return fig,ax,h
         
 if( __name__ == "__main__" ):
+    import matplotlib
+    matplotlib.rcParams['figure.dpi']=300
     test=pixelarrayQPC(W=W,L=L,plot=True,disorder_type='regular')
-    test.U0=0.1
-    # test.phi=0.1
-    test.energy=2
-    test.V1=-5
-    test.V11=-5
-    test.set_all_pixels(0)
-    # test.plot_potential()
-    result=[]
-    for V in np.linspace(-4.5,0,50):
-        test.set_all_pixels(V)
-        result.append(test.transmission())
-    plt.figure()
-    plt.plot(result)
-    ax,h=test.wave_func(0,plot_both=True)
-    plt.colorbar(h)
+    
+    test.U0=0.2
+    # # test.phi=0.1
+    test.energy=1
+    test.V1=-6
+    test.V11=-6
+    fig,ax,vals=test.plot_disorder(bounds=((50,70),(25,45)))
+    fig.savefig(r'C:\Users\Torbjørn\Google Drev\UNI\MastersProject\Thesis\Figures\QPC chapter\algorithm/disorder.pdf',format='pdf')
+    # test.set_all_pixels(0)
+    # # test.plot_potential()
+    # result=[]
+    # voltages=np.linspace(-3,0,200)
+    # for V in voltages:
+    #     test.set_all_pixels(V)
+    #     result.append(test.transmission())
+    # plt.figure()
+    # plt.plot(voltages,result)
+    # ax,h=test.wave_func(0,plot_both=True)
+    # plt.colorbar(h)
     # for i in range(20):
     # test.plot_current(100)
     

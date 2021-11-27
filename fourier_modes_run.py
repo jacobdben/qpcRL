@@ -1,3 +1,4 @@
+#%%
 from simulations.pixel_array_sim_2 import pixelarrayQPC
 from lossfunctions.staircasiness import staircasiness
 from datahandling.datahandling import datahandler, save_optimization_dict, load_optimization_dict
@@ -10,15 +11,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
-start=-3
-stop=0
-steps=400
+start=-7
+stop=2
+steps=300
 
 # Parameters for QPC
-disorder=0.2
-outer_gates=-4
+disorder=0.3
+outer_gates=-13
 B_field=0
-energy=1
+energy=3
 
 # Parameters for optimization algorithm
 bounds=(-1,1)
@@ -63,20 +64,42 @@ def func_to_minimize(x,table): #x len 8
     
     return val+penalty*pfactor
 
+# start_time=time.perf_counter()
+# result=[]
+# for avg in common_voltages:
+#     QPC.set_all_pixels(avg)
+#     result.append(QPC.transmission())
+
+# print('time %.3f'%(time.perf_counter()-start_time))
+# plt.figure()
+# plt.plot(common_voltages,result)
+
+#%%
+import json
+Results={'next_key':0}
 start_time=time.perf_counter()
-result=[]
-for avg in common_voltages:
-    QPC.set_all_pixels(avg)
-    result.append(QPC.transmission())
+run_time=24*3600
+while (time.perf_counter()-start_time)<run_time:
+    # print((time.perf_counter()-start_time))
+    Randoms=np.random.uniform(bounds[0],bounds[1],size=8)
+    x0=[0]
+    x0.extend(Randoms)
+    # print(x0)
+    _,voltages=fourier_to_potential(x0)
+    voltages,penalty=new_point(voltages.ravel(),bounds)
+    # print(voltages)
 
-print('time %.3f'%(time.perf_counter()-start_time))
-plt.figure()
-plt.plot(common_voltages,result)
-
+    for avg in common_voltages:
+        QPC.set_all_pixels(voltages+avg)
+        Results[str(Results['next_key'])]={'random_vals':Randoms.tolist(),'voltages':voltages.tolist(),'conductance':QPC.transmission(),'common_mode':avg}
+        Results['next_key']+=1
+save_folder=r'C:\Users\Torbjørn\Google Drev\UNI\MastersProject\EverythingkwantRL\NN_test_data/'
+with open(save_folder+'test.json','w') as file:
+    json.dump(Results,file,indent=6)
 
 #%% start the optimization
 
-xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.zeros(8),stop_time=48*3600,options={'tolx':1e-3})
+# xbest,es,run_id=optimize_cma(func_to_minimize,dat,start_point=np.zeros(8),stop_time=48*3600,options={'tolx':1e-3})
    
 
 #%% resume the optimization

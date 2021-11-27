@@ -45,6 +45,7 @@ def plot_fourier_modes(fourier_modes):
            r'$\delta_{1,1}$']
     #im is just for making a collected colorbar of all the plots.
     imfig=plt.figure()
+    print(np.unique(modes))
     im=plt.imshow(np.unique(modes)[:,np.newaxis])
     # imfig.set_visible(False)
     
@@ -57,6 +58,7 @@ def plot_fourier_modes(fourier_modes):
             axes[i,j].tick_params(axis='both',which='both',color='white',labelcolor='white')
     
     fig.colorbar(im,ax=axes.ravel().tolist())
+    # fig.savefig(r'C:\Users\Torbjørn\Google Drev\UNI\MastersProject\Thesis\Figures\QPC chapter\algorithm/fourier.pdf',format='pdf')
     return fig,axes
 
 
@@ -80,21 +82,22 @@ def potential_to_fourier(Vg,gate_locs=gate_locs):
     return parameters
 # fourier_modes=np.ones(9)
 if __name__=="__main__":
-    import matplotlib.pyplot as plt
+    import matplotlib
+    matplotlib.rcParams['figure.dpi']=300
 
-    fourier_modes=np.random.uniform(-1,1,9)
+    # fourier_modes=np.random.uniform(-1,1,9)
     
-    # fourier_modes=np.ones(9)
+    fourier_modes=np.ones(9)
     # fourier_modes[1]=0
     # fourier_modes[7]=1
     # fourier_modes[0]=0
     modes,V_g=fourier_to_potential(fourier_modes,gate_locs)
     
     modes2=potential_to_fourier(V_g)
-    print(fourier_modes-modes2)
-    plot=False
+    # print(fourier_modes-modes2)
+    plot=True
     if plot:
-        plot_fourier_modes(modes)
+        plot_fourier_modes(fourier_modes)
         
         # plot the combined gate voltages
         plt.figure()

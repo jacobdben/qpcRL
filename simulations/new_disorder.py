@@ -5,13 +5,14 @@ from scipy.interpolate import griddata
 
 
 def make_disorder(L,W,length_scale,random_seed=2):
-    np.random.seed(random_seed)
+    rng=np.random.RandomState(random_seed)
+    #np.random.seed(random_seed)
     xs=np.arange(start=np.floor(length_scale/2),stop=L,step=length_scale)
     ys=np.arange(start=np.floor(length_scale/2),stop=W,step=length_scale)
     XS,YS=np.meshgrid(xs,ys)
     points=np.array([XS.flatten(),YS.flatten()]).T
-    disorder=np.random.uniform(-1,1,size=(len(xs),len(ys)))
-
+    #disorder=np.random.uniform(-1,1,size=(len(xs),len(ys)))
+    disorder=rng.uniform(-1,1,size=(len(xs),len(ys)))
             
     grid_x,grid_y=np.meshgrid(np.arange(L),np.arange(W))
     
@@ -19,13 +20,13 @@ def make_disorder(L,W,length_scale,random_seed=2):
     disorder_int=griddata(points,disorder.flatten(),(grid_x,grid_y),method='cubic')
 
     #reset the random seed
-    np.random.seed()
+    #np.random.seed()
 
     return np.nan_to_num(disorder_int)
 
-def make_pixel_disorder(L,W,pixel_locations):
-    np.random.seed(1)
-    vals=np.random.uniform(-1,1,size=[3,3])
+def make_pixel_disorder(L,W,pixel_locations,random_seed=2):
+    rng=np.random.RandomState(random_seed)
+    vals=rng.uniform(-1,1,size=[3,3])
     disorder=np.zeros([L,W])
     for i in range(3):
         for j in range(3):

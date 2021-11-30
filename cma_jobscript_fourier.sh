@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-#SBATCH --job-name=disorder_test
+#SBATCH --job-name=NN_data_generation
 #SBATCH --partition=cmt
 #SBATCH --nodes=1
 #SBATCH --tasks-per-node=1

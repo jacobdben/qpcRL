@@ -4,6 +4,8 @@ from keras.models import Sequential,load_model
 from keras.layers import Dense
 from keras.callbacks import EarlyStopping
 from tensorflow.keras.losses import MeanSquaredError
+import sys
+import keras
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
@@ -48,12 +50,12 @@ class feedforward_network():
         # Create options dict sent to model.fit
         options={}
         if earlystopping:
-            es=EarlyStopping(monitor='val_loss',mode='min',verbose=1,patience=50)
+            es=EarlyStopping(monitor='val_loss',mode='min',verbose=1,patience=200)
             options['callbacks']=[es]
             
         if validation_data!=None:
             options['validation_data']=validation_data
-            
+
             
         # Print start time
         now = datetime.now()

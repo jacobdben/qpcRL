@@ -1,4 +1,4 @@
-
+#%%
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
@@ -9,12 +9,12 @@ def make_disorder(L,W,length_scale,random_seed=2):
     #np.random.seed(random_seed)
     xs=np.arange(start=np.floor(length_scale/2),stop=L,step=length_scale)
     ys=np.arange(start=np.floor(length_scale/2),stop=W,step=length_scale)
-    XS,YS=np.meshgrid(xs,ys)
+    XS,YS=np.meshgrid(xs,ys,indexing='ij')
     points=np.array([XS.flatten(),YS.flatten()]).T
     #disorder=np.random.uniform(-1,1,size=(len(xs),len(ys)))
     disorder=rng.uniform(-1,1,size=(len(xs),len(ys)))
             
-    grid_x,grid_y=np.meshgrid(np.arange(L),np.arange(W))
+    grid_x,grid_y=np.meshgrid(np.arange(L),np.arange(W),indexing='ij')
     
     
     disorder_int=griddata(points,disorder.flatten(),(grid_x,grid_y),method='cubic')
@@ -38,9 +38,11 @@ def make_pixel_disorder(L,W,pixel_locations,random_seed=2):
 
 if __name__=="__main__":
     W=70
-    L=60
+    L=120
     dis=make_disorder(L,W,5)*0.1
-    dis2=make_pixel_disorder(L,W)*0.1
+    print(dis.shape)
+    # dis2=make_pixel_disorder(L,W)*0.1
     plt.figure()
-    plt.imshow(dis2,origin='lower')
+    plt.imshow(dis,origin='lower')
     # plt.colorbar()
+# %%

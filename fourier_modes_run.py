@@ -78,7 +78,7 @@ def func_to_minimize(x,table): #x len 8
 import json
 Results={'next_key':0}
 start_time=time.perf_counter()
-run_time=24*3600
+run_time=100
 while (time.perf_counter()-start_time)<run_time:
     # print((time.perf_counter()-start_time))
     Randoms=np.random.uniform(bounds[0],bounds[1],size=8)

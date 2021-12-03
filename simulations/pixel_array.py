@@ -23,7 +23,7 @@ def rectangular_gate_pot(dims):
     d, l, r, b, t = distance, left, right, bottom, top
 
     def g(u, v):
-        return atan2(u * v, d * sqrt(u**2 + v**2 + d**2)) / (2 * pi)
+        return np.arctan2(u * v, d * np.sqrt(u**2 + v**2 + d**2)) / (2 * np.pi)
 
     def func(x, y, voltage):
         return voltage * (g(x-l, y-b) + g(x-l, t-y) +
@@ -64,33 +64,16 @@ else:
     L=120
     allgatedims=make_gates(left=int(L/2-10),right=int(L/2+10),W=W,L=L,spacing=2,gates_outside=10)
 
-# allgatedims=[gate1dims,gate2dims,gate3dims,gate4dims,gate5dims,gate6dims,gate7dims,gate8dims,gate9dims,gate10dims,gate11dims]
-
-#gate 1 and 11 are the outer gates, 2-10 are the pixel array
-_gate1 = rectangular_gate_pot(allgatedims[0]) 
-
-_gate2 = rectangular_gate_pot(allgatedims[1])
-_gate3 = rectangular_gate_pot(allgatedims[2]) 
-_gate4 = rectangular_gate_pot(allgatedims[3])
-_gate5 = rectangular_gate_pot(allgatedims[4])
-_gate6 = rectangular_gate_pot(allgatedims[5]) 
-_gate7 = rectangular_gate_pot(allgatedims[6])
-_gate8 = rectangular_gate_pot(allgatedims[7])
-_gate9 = rectangular_gate_pot(allgatedims[8]) 
-_gate10 = rectangular_gate_pot(allgatedims[9])
-
-_gate11 = rectangular_gate_pot(allgatedims[10])
 
 
-
-
-def qpc_potential(site, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11):
-    x, y = site.tag
-    return _gate1(x, y, V1) + _gate2(x, y, V2) + _gate3(x, y, V3) + _gate4(x,y,V4) + \
-           _gate5(x, y, V5) + _gate6(x, y, V6) + _gate7(x, y, V7) + _gate8(x,y,V8) + \
-           _gate9(x, y, V9) + _gate10(x, y, V10) + _gate11(x, y, V11) 
+# def qpc_potential(site, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11):
+#     x, y = site.tag
+#     return _gate1(x, y, V1) + _gate2(x, y, V2) + _gate3(x, y, V3) + _gate4(x,y,V4) + \
+#            _gate5(x, y, V5) + _gate6(x, y, V6) + _gate7(x, y, V7) + _gate8(x,y,V8) + \
+#            _gate9(x, y, V9) + _gate10(x, y, V10) + _gate11(x, y, V11) 
 
 disorder_values=make_disorder(L, W, length_scale=5,random_seed=2)
+print(disorder_values.shape)
 # print(disorder_values)
 pixel_disorder_values=make_pixel_disorder(L,W,allgatedims[1:10])
 
@@ -107,14 +90,14 @@ def pixel_disorder(site,U0):
 def disorder_old(site, U0, salt=13):
     return  U0 * (uniform(repr(site), repr(salt)) - 0.5)
 
-def hopping(site_i, site_j, phi):
-    xi, yi = site_i.tag
-    xj, yj = site_j.tag
-    return -exp(-0.5j * phi * (xi - xj) * (yi + yj))
+# def hopping(site_i, site_j, phi):
+#     xi, yi = site_i.tag
+#     xj, yj = site_j.tag
+#     return -exp(-0.5j * phi * (xi - xj) * (yi + yj))
 
 
 class pixelarrayQPC():
-    def __init__(self,W=W,L=L,plot=False,disorder_type='regular'):
+    def __init__(self,W=70,L=120,plot=False,disorder_type='regular'):
         #------------------------------------------------------------------------------
         # Set up KWANT basics
         # Parameters are:
@@ -149,21 +132,26 @@ class pixelarrayQPC():
         
         self.V11=-2
 
+        self.lattice=np.meshgrid(np.arange(L),np.arange(W),indexing='ij')
+
+        self.allgatedims=make_gates(left=int(L/2-10),right=int(L/2+10),W=W,L=L,spacing=2,gates_outside=10)
+
+        self.all_gate_calcs=[rectangular_gate_pot(dims)(self.lattice[0],self.lattice[1],1) for dims in self.allgatedims]
 
         
         def make_lead_x(start,stop, t=1):
             syst = kwant.Builder(kwant.TranslationalSymmetry([-1, 0]))
             syst[(lat(0, y) for y in np.arange(start,stop))] = 4 * t #no disorder in lead
-            syst[lat.neighbors()] = hopping
+            syst[lat.neighbors()] = self.hopping
             return syst
         
-        def make_barrier(pot,dis, W=W, L=L, t=1):
-            def onsite(s, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, U0, salt, t):
-                return 4 * t - pot(s,V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11) + dis(s, U0)
+        def make_barrier(pot,dis, W=W, L=L):
+            def onsite(s, U0, t):
+                return 4 * t - pot(s) + dis(s, U0)
             # Construct the scattering region.
             sr = kwant.Builder()
             sr[(lat(x, y) for x in range(L) for y in range(W))] = onsite 
-            sr[lat.neighbors()] = hopping
+            sr[lat.neighbors()] = self.hopping
 
             
             lead = make_lead_x(start=0,stop=W, t=self.t)
@@ -177,49 +165,52 @@ class pixelarrayQPC():
             self.disorder_func=pixel_disorder
         else:
             self.disorder_func=disorder
-        self.qpc = make_barrier(qpc_potential,self.disorder_func,t=self.t)
+        self.qpc = make_barrier(self.qpc_potential,self.disorder_func)
+
         # Plotting the gates and sites/leads and potential
         if plot:
-            fig,ax=plt.subplots()
-            kwant.plot(self.qpc,ax=ax)
-            rects=[]
-            for gate,dims in enumerate(allgatedims):
-                rect=Rectangle((dims[1],dims[3]),dims[2]-dims[1],dims[4]-dims[3],zorder=999)
-                rects.append(rect)
-                
-                # ax.text(x=dims[1],y=dims[3],s=str(gate))
-                
-                
-            pc=PatchCollection(rects, facecolor='green',alpha=10)
-            ax.add_collection(pc)
-            
-            
-            xlims=ax.get_xlim()
-            ylims=ax.get_ylim()
-            fig.savefig(r'C:\Users\Torbjørn\Google Drev\UNI\MastersProject\Thesis\Figures\QPC chapter\algorithm\lattice.pdf',format='pdf')
-            #copy paste of plot potential section
-            bounds=((0,L),(0,W))
-            fig,ax=plt.subplots()
-            vals=np.zeros([bounds[0][1]-bounds[0][0],bounds[1][1]-bounds[1][0]])
-            i=0
-            for x in np.arange(bounds[0][0],bounds[0][1]):
-                j=0
-                for y in np.arange(bounds[1][0],bounds[1][1]):
-                    site=SimpleNamespace(tag=(x,y),pos=(x,y))
-                    vals[i,j]=4*self.t-qpc_potential(site, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11)+self.disorder_func(site,self.U0)
-                    j+=1
-                i+=1
-            h=ax.imshow(vals.T,origin='lower',extent=(bounds[0][0],bounds[0][1],bounds[1][0],bounds[1][1]))
-            plt.colorbar(h)
-            # kwant.plotter.map(self.qpc, lambda s: 4*self.t-qpc_potential(s, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11) \
-            #               +self.disorder_func(s,self.U0))
-            
+            self.plot_system()
+            self.plot_potential()
+        # self.precalc_leads_qpc=self.qpc.precalculate(self.energy)
         self.fqpc = self.qpc.finalized()
+        # self.fqpc=self.fqpc.precalculate(self.energy)
+
+    def hopping(self,site_i, site_j):
+        xi, yi = site_i.tag
+        xj, yj = site_j.tag
+        return -exp(-0.5j * self.phi * (xi - xj) * (yi + yj))
     
+    def get_voltages(self):
+        return np.array([self.V1,self.V2,self.V3,self.V4,self.V5,self.V6,self.V7,self.V8,self.V9,self.V10,self.V11])
+
+    def calc_potential(self):
+        self.calculated_potential=np.einsum('i,ikj->kj',self.get_voltages(),np.array(self.all_gate_calcs))
+        # return np.einsum('i,ikj->kj',self.get_voltages(),np.array(self.all_gate_calcs))
+
+    
+    def qpc_potential(self,site):
+        x, y = site.tag
+        return self.calculated_potential[x,y]
+
+
     def transmission(self):
         Params=self.__dict__
         smatrix = kwant.smatrix(self.fqpc, self.energy, params=Params)
         return smatrix.transmission(1,0)  
+    
+    def plot_system(self):
+        fig,ax=plt.subplots()
+        kwant.plot(self.qpc,ax=ax)
+        rects=[]
+        for gate,dims in enumerate(allgatedims):
+            rect=Rectangle((dims[1],dims[3]),dims[2]-dims[1],dims[4]-dims[3],zorder=999)
+            rects.append(rect)
+            
+            # ax.text(x=dims[1],y=dims[3],s=str(gate))
+            
+            
+        pc=PatchCollection(rects, facecolor='green',alpha=10)
+        ax.add_collection(pc)
    
     def plot_disorder(self,bounds=((0,L),(0,W)),ax=None):
         if ax is None:
@@ -238,6 +229,7 @@ class pixelarrayQPC():
         return fig,ax,vals
         
     def plot_potential(self,bounds=((0,L),(0,W)),ax=None):
+        self.calc_potential()
         if ax is None:
             fig,ax=plt.subplots()
         vals=np.zeros([bounds[0][1]-bounds[0][0],bounds[1][1]-bounds[1][0]])
@@ -246,7 +238,7 @@ class pixelarrayQPC():
             j=0
             for y in np.arange(bounds[1][0],bounds[1][1]):
                 site=SimpleNamespace(tag=(x,y),pos=(x,y))
-                vals[i,j]=4*self.t-qpc_potential(site, self.V1, self.V2, self.V3, self.V4, self.V5, self.V6, self.V7, self.V8, self.V9, self.V10, self.V11)+self.disorder_func(site,self.U0)
+                vals[i,j]=4*self.t-self.qpc_potential(site)+self.disorder_func(site,self.U0)
                 j+=1
             i+=1
         h=ax.imshow(vals.T,origin='lower',extent=(bounds[0][0],bounds[0][1],bounds[1][0],bounds[1][1]))
@@ -276,6 +268,7 @@ class pixelarrayQPC():
             self.V10=val[8]
     
     def plot_current(self, eig_num):
+        self.calc_potential()
         # Calculate the wave functions in the system.
         fig,ax=plt.subplots()
         Params=self.__dict__
@@ -293,6 +286,7 @@ class pixelarrayQPC():
         return fig,ax
         
     def wave_func(self,lead=0,ax=None,self_plot=True,plot_both=False):
+        self.calc_potential()
         if ax==None:
             fig,ax=plt.subplots()
         
@@ -314,64 +308,3 @@ class pixelarrayQPC():
             
         # kwant.plotter.map(self.fqpc, np.sum(abs(scattering_wf)**2, axis=0),ax=ax)
         return fig,ax,h
-        
-if( __name__ == "__main__" ):
-    import matplotlib
-    matplotlib.rcParams['figure.dpi']=300
-    test=pixelarrayQPC(W=W,L=L,plot=True,disorder_type='regular')
-    
-    test.U0=0.2
-    # # test.phi=0.1
-    test.energy=1
-    test.V1=-6
-    test.V11=-6
-    fig,ax,vals=test.plot_disorder(bounds=((50,70),(25,45)))
-    fig.savefig(r'C:\Users\Torbjørn\Google Drev\UNI\MastersProject\Thesis\Figures\QPC chapter\algorithm/disorder.pdf',format='pdf')
-    # test.set_all_pixels(0)
-    # # test.plot_potential()
-    # result=[]
-    # voltages=np.linspace(-3,0,200)
-    # for V in voltages:
-    #     test.set_all_pixels(V)
-    #     result.append(test.transmission())
-    # plt.figure()
-    # plt.plot(voltages,result)
-    # ax,h=test.wave_func(0,plot_both=True)
-    # plt.colorbar(h)
-    # for i in range(20):
-    # test.plot_current(100)
-    
-
-    # import time
-    # def measure(start,stop,numpoints):
-    #     plt.figure()
-    #     result=[]
-    #     sweep=np.linspace(start,stop,numpoints)
-    #     for i in sweep:
-    #         test.V11=i
-    #         test.V1=i
-    #         result.append(test.transmission())
-    #     plt.plot(sweep,result)
-        
-    # def measure2(start,stop,numpoints):
-    #     # test.V1=-10
-    #     # test.V11=-4
-    #     # plt.figure()
-    #     result=[]
-    #     sweep=np.linspace(start,stop,numpoints)
-    #     for i in sweep:
-    #         test.set_all_pixels(i)
-    #         result.append(test.transmission())
-    #     # plt.plot(sweep,result)
-    #     return result,sweep
-
-    
-    # start_time=time.perf_counter()  
-    # # measure(-8,-2,30)
-
-    # testresult,sweep=measure2(-2,0,30)
-    # # plt.plot(sweep,testresult,'*')
-    # plt.plot(sweep,testresult)
-    # plt.grid('on')
-    # stop_time=time.perf_counter()
-    # print("time spent: {:.2f}".format(stop_time-start_time))

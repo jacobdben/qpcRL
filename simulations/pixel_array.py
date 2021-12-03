@@ -64,36 +64,21 @@ else:
     L=120
     allgatedims=make_gates(left=int(L/2-10),right=int(L/2+10),W=W,L=L,spacing=2,gates_outside=10)
 
-
-
-# def qpc_potential(site, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11):
-#     x, y = site.tag
-#     return _gate1(x, y, V1) + _gate2(x, y, V2) + _gate3(x, y, V3) + _gate4(x,y,V4) + \
-#            _gate5(x, y, V5) + _gate6(x, y, V6) + _gate7(x, y, V7) + _gate8(x,y,V8) + \
-#            _gate9(x, y, V9) + _gate10(x, y, V10) + _gate11(x, y, V11) 
-
+# possibly move these sections into the class
 disorder_values=make_disorder(L, W, length_scale=5,random_seed=2)
-print(disorder_values.shape)
-# print(disorder_values)
 pixel_disorder_values=make_pixel_disorder(L,W,allgatedims[1:10])
 
 def disorder(site,U0):
     x,y=site.tag
-    # print(x,y)
     return disorder_values[x,y]*U0
 
 def pixel_disorder(site,U0):
     x,y=site.tag
-    # print(x,y)
     return pixel_disorder_values[x,y]*U0
     
 def disorder_old(site, U0, salt=13):
     return  U0 * (uniform(repr(site), repr(salt)) - 0.5)
 
-# def hopping(site_i, site_j, phi):
-#     xi, yi = site_i.tag
-#     xj, yj = site_j.tag
-#     return -exp(-0.5j * phi * (xi - xj) * (yi + yj))
 
 
 class pixelarrayQPC():
@@ -171,18 +156,22 @@ class pixelarrayQPC():
         if plot:
             self.plot_system()
             self.plot_potential()
+
         # self.precalc_leads_qpc=self.qpc.precalculate(self.energy)
         self.fqpc = self.qpc.finalized()
-        # self.fqpc=self.fqpc.precalculate(self.energy)
+        self.fqpc=self.fqpc.precalculate(self.energy)
 
     def hopping(self,site_i, site_j):
         xi, yi = site_i.tag
         xj, yj = site_j.tag
         return -exp(-0.5j * self.phi * (xi - xj) * (yi + yj))
     
+    #just gets an array with the voltages
     def get_voltages(self):
         return np.array([self.V1,self.V2,self.V3,self.V4,self.V5,self.V6,self.V7,self.V8,self.V9,self.V10,self.V11])
 
+    #calculates the total potential from a vector with voltages multiplied with the precomputed gate potentials with V=1, then sums it together
+    #this should be called in every function that wants to calculate anything
     def calc_potential(self):
         self.calculated_potential=np.einsum('i,ikj->kj',self.get_voltages(),np.array(self.all_gate_calcs))
         # return np.einsum('i,ikj->kj',self.get_voltages(),np.array(self.all_gate_calcs))
@@ -194,6 +183,7 @@ class pixelarrayQPC():
 
 
     def transmission(self):
+        self.calc_potential()
         Params=self.__dict__
         smatrix = kwant.smatrix(self.fqpc, self.energy, params=Params)
         return smatrix.transmission(1,0)  
@@ -205,8 +195,7 @@ class pixelarrayQPC():
         for gate,dims in enumerate(allgatedims):
             rect=Rectangle((dims[1],dims[3]),dims[2]-dims[1],dims[4]-dims[3],zorder=999)
             rects.append(rect)
-            
-            # ax.text(x=dims[1],y=dims[3],s=str(gate))
+            ax.text(x=dims[1],y=dims[3],s=str(gate))
             
             
         pc=PatchCollection(rects, facecolor='green',alpha=10)
@@ -308,3 +297,11 @@ class pixelarrayQPC():
             
         # kwant.plotter.map(self.fqpc, np.sum(abs(scattering_wf)**2, axis=0),ax=ax)
         return fig,ax,h
+
+if __name__=="__main__":
+    QPC=pixelarrayQPC(plot=False)
+    vals=np.linspace(-2,0,100)
+    result=[]
+    for val in vals:
+        QPC.set_all_pixels(val)
+        result.append(QPC.transmission())

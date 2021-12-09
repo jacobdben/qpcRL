@@ -9,6 +9,7 @@ from matplotlib.patches import Rectangle
 from .new_disorder import make_disorder, make_pixel_disorder
 from types import SimpleNamespace
 import scipy.sparse.linalg as sla
+from multiprocessing import Pool, cpu_count
 
 def rectangular_gate_pot(dims):
     """Compute the potential of a rectangular gate.
@@ -127,7 +128,7 @@ class pixelarrayQPC():
             self.disorder_func=pixel_disorder
         else:
             self.disorder_func=disorder
-        self.qpc = self.__make_barrier(self.qpc_potential,self.disorder_func)
+        self.qpc = self.make_barrier(self.qpc_potential,self.disorder_func)
 
         # Plotting the gates and sites/leads and potential
         if plot:
@@ -138,31 +139,31 @@ class pixelarrayQPC():
         self.fqpc = self.qpc.finalized()
         self.fqpc=self.fqpc.precalculate(self.energy)
 
-    def __make_lead_x(self,start,stop, t=1):
+    def make_lead_x(self,start,stop, t=1):
             syst = kwant.Builder(kwant.TranslationalSymmetry([-1, 0]))
             syst[(self.lat(0, y) for y in np.arange(start,stop))] = 4 * t #no disorder in lead
-            syst[self.lat.neighbors()] = self.__hopping
+            syst[self.lat.neighbors()] = self.hopping
             return syst
         
-    def __make_barrier(self,pot,dis, W=W, L=L):
+    def make_barrier(self,pot,dis, W=W, L=L):
         
         # Construct the scattering region.
         sr = kwant.Builder()
-        sr[(self.lat(x, y) for x in range(L) for y in range(W))] = self.__onsite 
-        sr[self.lat.neighbors()] = self.__hopping
+        sr[(self.lat(x, y) for x in range(L) for y in range(W))] = self.onsite 
+        sr[self.lat.neighbors()] = self.hopping
 
         
-        lead = self.__make_lead_x(start=0,stop=W, t=self.t)
+        lead = self.make_lead_x(start=0,stop=W, t=self.t)
         sr.attach_lead(lead)
         sr.attach_lead(lead.reversed())
         
 
         return sr
     
-    def __onsite(self,s, U0, t):
+    def onsite(self,s, U0, t):
             return 4 * t - self.qpc_potential(s) + self.disorder_func(s, U0)
 
-    def __hopping(self,site_i, site_j):
+    def hopping(self,site_i, site_j):
         xi, yi = site_i.tag
         xj, yj = site_j.tag
         return -exp(-0.5j * self.phi * (xi - xj) * (yi + yj))
@@ -299,6 +300,30 @@ class pixelarrayQPC():
         # kwant.plotter.map(self.fqpc, np.sum(abs(scattering_wf)**2, axis=0),ax=ax)
         return fig,ax,h
 
+    def pool_func(self,vals):
+        result1=[]
+        for val in vals:
+            self.set_all_pixels(val)
+            result1.append(self.transmission())
+        return result1
+
+    def split_vals(self,vals,n):
+        newlist=[]
+        for i in range(0, len(vals), int(len(vals)/n)):
+            newlist.append(vals[i:i + int(len(vals)/n) ])
+        return newlist
+
+    def parallel_transmission(self,vals,num_cpus=None):
+        if num_cpus==None:
+            num_cpus=cpu_count()
+        
+        split_vals=self.split_vals(vals,num_cpus)
+
+        with Pool(num_cpus) as p:
+            final_result=p.map(self.pool_func,split_vals)
+        return [val for sublist in final_result for val in sublist] #returns the entire trace as one list
+        
+        
 if __name__=="__main__":
     QPC=pixelarrayQPC(plot=False)
     vals=np.linspace(-2,0,100)

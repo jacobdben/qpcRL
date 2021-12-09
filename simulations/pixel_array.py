@@ -94,7 +94,7 @@ class pixelarrayQPC():
         # t is a hopping parameter
         # 
         #------------------------------------------------------------------------------
-        lat = kwant.lattice.square(norbs=1)
+        self.lat = kwant.lattice.square(norbs=1)
 
         self.phi=0
         self.salt=13
@@ -123,34 +123,11 @@ class pixelarrayQPC():
 
         self.all_gate_calcs=[rectangular_gate_pot(dims)(self.lattice[0],self.lattice[1],1) for dims in self.allgatedims]
 
-        
-        def make_lead_x(start,stop, t=1):
-            syst = kwant.Builder(kwant.TranslationalSymmetry([-1, 0]))
-            syst[(lat(0, y) for y in np.arange(start,stop))] = 4 * t #no disorder in lead
-            syst[lat.neighbors()] = self.hopping
-            return syst
-        
-        def make_barrier(pot,dis, W=W, L=L):
-            def onsite(s, U0, t):
-                return 4 * t - pot(s) + dis(s, U0)
-            # Construct the scattering region.
-            sr = kwant.Builder()
-            sr[(lat(x, y) for x in range(L) for y in range(W))] = onsite 
-            sr[lat.neighbors()] = self.hopping
-
-            
-            lead = make_lead_x(start=0,stop=W, t=self.t)
-            sr.attach_lead(lead)
-            sr.attach_lead(lead.reversed())
-            
-
-            return sr
-        
         if disorder_type=='pixel':
             self.disorder_func=pixel_disorder
         else:
             self.disorder_func=disorder
-        self.qpc = make_barrier(self.qpc_potential,self.disorder_func)
+        self.qpc = self.__make_barrier(self.qpc_potential,self.disorder_func)
 
         # Plotting the gates and sites/leads and potential
         if plot:
@@ -161,7 +138,31 @@ class pixelarrayQPC():
         self.fqpc = self.qpc.finalized()
         self.fqpc=self.fqpc.precalculate(self.energy)
 
-    def hopping(self,site_i, site_j):
+    def __make_lead_x(self,start,stop, t=1):
+            syst = kwant.Builder(kwant.TranslationalSymmetry([-1, 0]))
+            syst[(self.lat(0, y) for y in np.arange(start,stop))] = 4 * t #no disorder in lead
+            syst[self.lat.neighbors()] = self.__hopping
+            return syst
+        
+    def __make_barrier(self,pot,dis, W=W, L=L):
+        
+        # Construct the scattering region.
+        sr = kwant.Builder()
+        sr[(self.lat(x, y) for x in range(L) for y in range(W))] = self.__onsite 
+        sr[self.lat.neighbors()] = self.__hopping
+
+        
+        lead = self.__make_lead_x(start=0,stop=W, t=self.t)
+        sr.attach_lead(lead)
+        sr.attach_lead(lead.reversed())
+        
+
+        return sr
+    
+    def __onsite(self,s, U0, t):
+            return 4 * t - self.qpc_potential(s) + self.disorder_func(s, U0)
+
+    def __hopping(self,site_i, site_j):
         xi, yi = site_i.tag
         xj, yj = site_j.tag
         return -exp(-0.5j * self.phi * (xi - xj) * (yi + yj))
@@ -305,3 +306,4 @@ if __name__=="__main__":
     for val in vals:
         QPC.set_all_pixels(val)
         result.append(QPC.transmission())
+    print(result)

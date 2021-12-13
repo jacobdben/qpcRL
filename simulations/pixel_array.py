@@ -316,6 +316,8 @@ class pixelarrayQPC():
     def parallel_transmission(self,vals,num_cpus=None):
         if num_cpus==None:
             num_cpus=cpu_count()
+        elif num_cpus>cpu_count():
+            num_cpus=cpu_count()
         
         split_vals=self.split_vals(vals,num_cpus)
 

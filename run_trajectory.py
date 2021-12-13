@@ -41,6 +41,12 @@ dat=datahandler('fourier_modes',QPC=QPC)
 
 order=2
 start_point=np.zeros(shape=(order,8)).ravel()
-kwargs={'common_mode':common_voltages,'QPC_instance':QPC,'order':order,'loss_function':stairs.stairLossFunk2,'bounds':(-9,4),'pfactor':0.001}
+kwargs={'common_mode':common_voltages,
+        'QPC_instance':QPC,
+        'order':order,
+        'loss_function':stairs.stairLossFunk2,
+        'bounds':(-9,4),
+        'pfactor':0.001,
+        'num_cpus':4}
 actual_func_to_minimize=partial(trajectory_func_to_optimize,**kwargs)
 result=optimize_cma(actual_func_to_minimize,dat,start_point,maxfevals=99999,sigma=0.5,stop_time=sys.argv[1]*3600)

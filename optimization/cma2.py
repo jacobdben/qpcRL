@@ -13,13 +13,13 @@ def folder_name(data_path):
     lis=[int(f) for f in folders]
     lis.append(0)
     newfolder=data_path+'outcmaes/'+'{}/'.format(max(lis)+1)
-    return newfolder
+    return newfolder,max(lis)+1
 
 
 def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=0.5,stop_time=None,callbacks=[None],args=[],options={}):
     #make a seperate folder for this run
     data_path=datahandler.data_path
-    newfolder=folder_name(data_path)
+    newfolder,folder_num=folder_name(data_path)
     print("data saved to:")
     print(newfolder)
     os.mkdir(newfolder[:-1])
@@ -53,7 +53,7 @@ def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=
     with open(newfolder+"datadict.txt",mode='w') as file_object:
         file_object.write(json.dumps(datadict))
         
-    return x,es, int(newfolder[-3:-1])
+    return x,es, folder_num
 
 
 def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=None,callbacks=[None],args=[],options={}):
@@ -70,14 +70,6 @@ def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=Non
         string=file.read()
         es=pickle.loads(string)
 
-    if not stop_time==None:
-        start_time=es.time_last_displayed
-        def callback_time(es):
-            cur_time=es.time_last_displayed
-            if cur_time>=start_time+stop_time:
-                es.stop()['time']=cur_time
-        
-        callbacks.append(callback_time)
     args_send=[datadict]
     args_send.extend(args)
 

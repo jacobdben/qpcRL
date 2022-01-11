@@ -130,7 +130,7 @@ class staircasiness():
         for i in range(len(staircase)-1):
               res+=np.cbrt(np.abs(staircase[i+1]-staircase[i])+0.01)
         
-        P_not_zeros=len(np.where(staircase>1e-5)[0])/len(staircase)
+        P_not_zeros=len(np.where(staircase>1e-1)[0])/len(staircase)
         
         return res/(P_not_zeros+1)
     
@@ -178,7 +178,7 @@ class staircasiness():
         return res
     
     def window_loss(self,staircase,p=0.2, noise_eps=0):
-        upper_lim=9
+        upper_lim=5
         lower_lim=1e-2
         if staircase[0]>upper_lim:
             return 2

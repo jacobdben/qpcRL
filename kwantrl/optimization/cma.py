@@ -1,3 +1,4 @@
+from numpy.lib.npyio import save
 import cma
 
 # general
@@ -6,20 +7,20 @@ import os
 import json
 import pickle
 
-def folder_name(data_path):
-    if not os.path.exists(data_path+"outcmaes"):
-        os.mkdir(data_path+"outcmaes")
-    folders=folders=list(os.walk(data_path+"outcmaes/"))[0][1]
-    lis=[int(f) for f in folders]
-    lis.append(0)
-    newfolder=data_path+'outcmaes/'+'{}/'.format(max(lis)+1)
-    return newfolder
+def save_es(es,folder):
+    string=es.pickle_dumps()
+    with open(folder+'saved_es.pkl','wb') as file:
+        file.write(string)
 
+def load_es(folder):
+    with open(folder+'saved_es.pkl','rb') as file:
+        string=file.read()
+        es=pickle.loads(string)
+    return es
 
 def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=0.5,stop_time=None,callbacks=[None],args=[],options={}):
     #make a seperate folder for this run
-    data_path=datahandler.data_path
-    newfolder=folder_name(data_path)
+    newfolder,run_id=datahandler.next_outcmaes_folder_name()
     print("data saved to:")
     print(newfolder)
     os.mkdir(newfolder[:-1])
@@ -45,15 +46,12 @@ def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=
         print(es.stop(),file=file_object)
     
     #save the es instance
-    string=es.pickle_dumps()
-    with open(newfolder+'saved_es.pkl','wb') as file:
-        file.write(string)
+    save_es(es,newfolder)
     
     #save the datadict
-    with open(newfolder+"datadict.txt",mode='w') as file_object:
-        file_object.write(json.dumps(datadict))
+    datahandler.save_data(datadict,newfolder)
         
-    return x,es, int(newfolder[-3:-1])
+    return x,es, run_id
 
 
 def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=None,callbacks=[None],args=[],options={}):
@@ -63,25 +61,18 @@ def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=Non
     print("data loaded from:")
     print(folder)
     
-    with open(folder+'datadict.txt','rb') as file:
-        datadict=json.load(file)
-        
-    with open(folder+'saved_es.pkl','rb') as file:
-        string=file.read()
-        es=pickle.loads(string)
+    #load datadict
+    datadict=datahandler.load_data(folder=folder)
+    #load es
+    es=load_es(folder)
 
     if not stop_time==None:
         start_time=es.time_last_displayed
-        def callback_time(es):
-            cur_time=es.time_last_displayed
-            if cur_time>=start_time+stop_time:
-                es.stop()['time']=cur_time
-        
-        callbacks.append(callback_time)
+
     args_send=[datadict]
     args_send.extend(args)
 
-    options_send={'maxfevals':maxfevals,'timeout':stop_time}
+    options_send={'maxfevals':maxfevals,'timeout':stop_time+start_time}
     # for key in options:
     es.opts.set(options) # this change is untested so far
     es.opts.set(options_send )
@@ -90,14 +81,9 @@ def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=Non
     
     with open(folder+"stopping_criterion.txt",mode='a+') as file_object:
         print(es.stop(),file=file_object)
-        
-
     
-    with open(folder+"datadict.txt",mode='w') as file_object:
-        file_object.write(json.dumps(datadict))
+    datahandler.save_data(datadict,folder)
         
-    string=es.pickle_dumps()
-    with open(folder+'saved_es.pkl','wb') as file:
-        file.write(string)
-        
+    save_es(es,folder)
+
     return es.result.xbest, es, run_id

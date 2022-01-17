@@ -129,7 +129,20 @@ class datahandler():
             datadict=json.load(file)
         return datadict
         
+    def transform_data(self,datadict):
+        return_dict={}
+        #initialized dict with the correct keys
+        for key in datadict['measurements']['0']:
+            return_dict[key]=[]
 
+        #fills dict lists with values
+        for key in datadict['measurements']:
+            for key2,value in datadict['measurements'][key].items():
+                return_dict[key2].append(value)
+        return return_dict
+
+    def load_transformed_data(self,run_id=None,folder=None):
+        return self.transform_data(self.load_data(run_id,folder))
 
 
 

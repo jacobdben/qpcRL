@@ -1,105 +1,82 @@
+from kwantrl.datahandling.datahandling import datahandler
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 
 
-from datahandling.datahandling import load_cma_output
-from optimization.newpoint import new_point
- 
-def plot_run(QPC,data_path,run_number,common_voltages,bounds,staircasiness,pfactor):
-    fitness,recentbestxs,xbest=load_cma_output(data_path,run_number)
-    xbest,penalty=new_point(xbest,bounds=bounds)
-    print("penalty from projection: %.4f" %(penalty*pfactor))
-    
-    result=[]
-    baseline=[]
-    for avg_voltage in common_voltages:
-        QPC.set_all_pixels(xbest+avg_voltage)
-        result.append(QPC.transmission())
+#print(plt.style.available) for available styles
+
+class plotter_class():
+    def __init__(self,run_id) -> None:
+        self.data,self.starting_point=datahandler().load_transformed_data(run_id)
+        self.run_id=run_id
+
+        self.best_call=np.argmin(self.data['loss'])
+        self.best_loss=self.data['loss'][self.best_call]
+        mpl.rcParams['figure.dpi']=300
+        mpl.rcParams['figure.dpi']=200
+        mpl.rcParams["figure.facecolor"]='white'
+        mpl.rcParams["axes.facecolor"]='white'
+        mpl.rcParams["savefig.facecolor"]='white'
+        # plt.style.use('classic')
+
+    def __plot_1d(self,ax,y_data,x_data=None,**kwargs):
+        if x_data==None:
+            ax.plot(y_data,**kwargs)
+        else:
+            ax.plot(x_data,y_data,**kwargs)
+
+    def plot_loss(self,**kwargs):
+        fig,ax=plt.subplots()
+        self.__plot_1d(ax,self.data['loss'])
+        ax.set_xlabel('function call')
+        ax.set_ylabel('loss')
+        ax.set_title(f'CMA-id:{self.run_id}, loss')
+        return fig,ax
+
+    def plot_iter_loss(self,):
+        print('unimplemented')
+
+    def plot_result(self,):
+        fig,ax=plt.subplots()
+        if 'xaxis' in self.data:
+            self.__plot_1d(ax,self.data['staircase'][self.best_call],self.data['xaxis'][self.best_call],label=f'B-loss:{self.best_loss:.3f}')
+            self.__plot_1d(ax,self.starting_point['staircase'],self.starting_point['xaxis'],label=f"S-loss:{self.starting_point['loss']:.3f}")
+        else:
+            self.__plot_1d(ax,self.data['staircase'][self.best_call],label=f'loss:{self.best_loss:.3f}')
+            self.__plot_1d(ax,self.starting_point['staircase'],label=f"loss:{self.starting_point['loss']:.3f}")
+        ax.legend(loc='upper left')
+        ax.set_xlabel(r'$V_{avg}$ [V]')
+        ax.set_ylabel('Conductance')
+        ax.set_title(f'CMA-id:{self.run_id}, result')
+        ax.grid(axis='y')
+        return fig,ax
+
+    def plot_wave_func(self,axis_point,QPC=None,starting_run=False,run_num=None):
+        if starting_run:
+            temp_data=self.data
+        else:
+            temp_data=self.data
+
+        if run_num==None:
+            run_num=self.best_call
+
+        if QPC==None:
+            try:
+                QPC=datahandler().load_qpc(self.run_id)
+            except:
+                print(f'No QPC instance provided and instance is not saved for run_id:{self.run_id}')
         
-        QPC.set_all_pixels(avg_voltage)
-        baseline.append(QPC.transmission())
+        if isinstance(axis_point,(list,np.ndarray)):
+            return [self.plot_wave_func(axis_p) for axis_p in axis_point]
         
-    plt.figure()
-    plt.plot(common_voltages,result,label="Optimized: {:.4f}".format(staircasiness.histogram(result)+pfactor*penalty))
-    plt.plot(common_voltages,baseline,label="Not Optimized: {:.4f}".format(staircasiness.histogram(baseline)))
-    plt.xlabel("Avg voltage")
-    plt.ylabel("Conductance")
-    plt.grid('on')
-    plt.legend()
-    
+        which_point=np.argmin(np.abs(np.array(temp_data['xaxis'][run_num])-axis_point))
+        point_value=temp_data["xaxis"][run_num][which_point]
+        print(f'plotting wavefunction at x-axis value: {point_value:.2f}')
+        voltages=temp_data['voltages'][run_num][which_point]
 
-def plot_potentials(QPC,data_path,run_number,common_voltages,bounds,staircasiness,pfactor,section=((19,41),(25,45))):
-    fitness,recentbestxs,xbest=load_cma_output(data_path,run_number)
-    xbest,penalty=new_point(xbest,bounds=bounds)
-    if section==None:
-        section=((0,60),(0,70))
-    fig,ax=plt.subplots() 
-    ax.set_title("Optimized at avg_voltage: {:.2f}".format(common_voltages[14])) 
-    QPC.set_all_pixels(xbest+common_voltages[14])
-    optimized_mid,p1=QPC.plot_potential_section(bounds=section,ax=ax)
-    plt.colorbar(p1)
+        QPC.set_all_pixels(voltages)
+        fig,ax=QPC.wave_func()
+        ax.set_title(f'CMA-id:{self.run_id}, WF at xaxis: {point_value:.2f}, with conductance: {temp_data["staircase"][run_num][which_point]:.2f}')
+        return fig,ax
     
-    fig,ax=plt.subplots() 
-    ax.set_title("Optimized at avg_voltage: {:.2f}".format(common_voltages[0])) 
-    QPC.set_all_pixels(xbest+common_voltages[0])
-    optimized_start,p1=QPC.plot_potential_section(bounds=section,ax=ax)
-    plt.colorbar(p1)
-    
-    fig,ax=plt.subplots() 
-    ax.set_title("Not Optimized at avg_voltage: {:.2f}".format(common_voltages[14])) 
-    QPC.set_all_pixels(common_voltages[14])
-    not_optimized_mid,p1=QPC.plot_potential_section(bounds=section,ax=ax)
-    plt.colorbar(p1)
-    
-    fig,ax=plt.subplots() 
-    ax.set_title("Not Optimized at avg_voltage: {:.2f}".format(common_voltages[0])) 
-    QPC.set_all_pixels(common_voltages[0])
-    not_optimized_start,p1=QPC.plot_potential_section(bounds=section,ax=ax)
-    plt.colorbar(p1)
-    
-    
-    # fig,ax=plt.subplots()
-    # # ax.set_title("Not Optimized at avg_voltage: {:.2f}".format(common_voltages[0])) 
-    # plt.imshow((optimized_mid-not_optimized_start).T,origin='lower',extent=(section[0][0],section[0][1],section[1][0],section[1][1]))
-    # plt.colorbar()
-    
-    
-    
-# plt.savefig(figurepath+"2")
-
-# fig,ax=plt.subplots()
-# ax.set_title("Non Optimized")
-# QPC.U0=disorder
-# QPC.set_all_pixels(common_voltages[14])
-# t2,p2=QPC.plot_potential_section(bounds=bounds,ax=ax)
-# plt.colorbar(p2)
-# # np.where(t1==t2)
-# plt.savefig(figurepath+"3")
-
-# fig,ax=plt.subplots()
-# ax.set_title("Non Optimized,no disorder")
-# QPC.U0=0
-# QPC.set_all_pixels(common_voltages[14])
-# t3,p3=QPC.plot_potential_section(bounds=bounds,ax=ax)
-# plt.colorbar(p3)
-# plt.savefig(figurepath+"4")
-# # np.where(t1==t2)
-
-# fig,ax=plt.subplots()
-# ax.set_title('Non Optimized - NonOpt No Disorder')
-# p4=ax.imshow(t2.T-t3.T,origin='lower',extent=(bounds[0][0],bounds[0][1],bounds[1][0],bounds[1][1]))
-# plt.colorbar(p4)
-# plt.savefig(figurepath+"5")
-
-# fig,ax=plt.subplots()
-# ax.set_title('Optimized - NonOpt No Disorder')
-# p5=ax.imshow(t1.T-t3.T,origin='lower',extent=(bounds[0][0],bounds[0][1],bounds[1][0],bounds[1][1]))
-# plt.colorbar(p5)
-# plt.savefig(figurepath+"6")
-
-
-# fig,ax=plt.subplots()
-# ax.set_title('Optimized - NonOpt')
-# p6=ax.imshow(t1.T-t2.T,origin='lower',extent=(bounds[0][0],bounds[0][1],bounds[1][0],bounds[1][1]))
-# plt.colorbar(p6)
-# plt.savefig(figurepath+"7")

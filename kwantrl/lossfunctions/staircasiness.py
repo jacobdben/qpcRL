@@ -178,12 +178,12 @@ class staircasiness():
         return res
     
     def window_loss(self,staircase,p=0.2, noise_eps=0):
-        upper_lim=9
+        upper_lim=7
         lower_lim=1e-2
         if staircase[0]>upper_lim:
-            return 2
+            return 1
         if (staircase<upper_lim).all() or (staircase>lower_lim).all():
-            return 2
+            return 1
         
         small = np.where(staircase < lower_lim)[0]
         large = np.where(staircase > upper_lim)[0]

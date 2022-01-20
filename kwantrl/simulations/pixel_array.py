@@ -54,36 +54,8 @@ def make_gates(distance_to_gate=5,left=30,right=50,spacing=2.5,W=80,L=80,gates_o
     gates.append(gate11dims)
     return gates
  
-#standard size   
-if False:
-    W=70
-    L=60
-    allgatedims=make_gates(left=20,right=40,W=W,L=L,spacing=2,gates_outside=10)
-else:
-    #longer
-    W=70
-    L=120
-    allgatedims=make_gates(left=int(L/2-10),right=int(L/2+10),W=W,L=L,spacing=2,gates_outside=10)
-
-# possibly move these sections into the class
-disorder_values=make_disorder(L, W, length_scale=5,random_seed=2)
-pixel_disorder_values=make_pixel_disorder(L,W,allgatedims[1:10])
-
-def disorder(site,U0):
-    x,y=site.tag
-    return disorder_values[x,y]*U0
-
-def pixel_disorder(site,U0):
-    x,y=site.tag
-    return pixel_disorder_values[x,y]*U0
-    
-def disorder_old(site, U0, salt=13):
-    return  U0 * (uniform(repr(site), repr(salt)) - 0.5)
-
-
-
 class pixelarrayQPC():
-    def __init__(self,W=70,L=120,plot=False,disorder_type='regular'):
+    def __init__(self,W=70,L=120,plot=False,disorder_type='regular',distance=5,t=None):
         #------------------------------------------------------------------------------
         # Set up KWANT basics
         # Parameters are:
@@ -96,12 +68,17 @@ class pixelarrayQPC():
         # 
         #------------------------------------------------------------------------------
         self.lat = kwant.lattice.square(norbs=1)
+        self.L=L
+        self.W=W
 
         self.phi=0
         self.salt=13
         self.U0=0
         self.energy=1
-        self.t=1
+        if t==None:
+            self.t=1
+        else:
+            self.t=t
         
         
         self.V1=-2
@@ -120,15 +97,15 @@ class pixelarrayQPC():
 
         self.lattice=np.meshgrid(np.arange(L),np.arange(W),indexing='ij')
 
-        self.allgatedims=make_gates(left=int(L/2-10),right=int(L/2+10),W=W,L=L,spacing=2,gates_outside=10)
+        self.allgatedims=make_gates(distance_to_gate=distance,left=int(L/2-10),right=int(L/2+10),W=W,L=L,spacing=2,gates_outside=10)
 
         self.all_gate_calcs=[rectangular_gate_pot(dims)(self.lattice[0],self.lattice[1],1) for dims in self.allgatedims]
 
         if disorder_type=='pixel':
-            self.disorder_func=pixel_disorder
+            self.disorder_func=self.pixel_disorder
         else:
-            self.disorder_func=disorder
-        self.qpc = self.make_barrier(self.qpc_potential,self.disorder_func)
+            self.disorder_func=self.disorder
+        self.qpc = self.make_barrier(W,L)
 
         # Plotting the gates and sites/leads and potential
         if plot:
@@ -139,13 +116,27 @@ class pixelarrayQPC():
         self.fqpc = self.qpc.finalized()
         self.fqpc=self.fqpc.precalculate(self.energy)
 
-    def make_lead_x(self,start,stop, t=1):
+        self.disorder_values=make_disorder(L, W, length_scale=5,random_seed=2)
+        self.pixel_disorder_values=make_pixel_disorder(L,W,self.allgatedims[1:10])
+
+    def disorder(self,site,U0):
+        x,y=site.tag
+        return self.disorder_values[x,y]*U0
+
+    def pixel_disorder(self,site,U0):
+        x,y=site.tag
+        return self.pixel_disorder_values[x,y]*U0
+        
+    def disorder_old(site, U0, salt=13):
+        return  U0 * (uniform(repr(site), repr(salt)) - 0.5)
+
+    def make_lead_x(self,start,stop):
             syst = kwant.Builder(kwant.TranslationalSymmetry([-1, 0]))
-            syst[(self.lat(0, y) for y in np.arange(start,stop))] = 4 * t #no disorder in lead
+            syst[(self.lat(0, y) for y in np.arange(start,stop))] = 4 * self.t #no disorder in lead
             syst[self.lat.neighbors()] = self.hopping
             return syst
         
-    def make_barrier(self,pot,dis, W=W, L=L):
+    def make_barrier(self, W, L):
         
         # Construct the scattering region.
         sr = kwant.Builder()
@@ -153,22 +144,22 @@ class pixelarrayQPC():
         sr[self.lat.neighbors()] = self.hopping
 
         
-        lead = self.make_lead_x(start=0,stop=W, t=self.t)
+        lead = self.make_lead_x(start=0,stop=W)
         sr.attach_lead(lead)
         sr.attach_lead(lead.reversed())
         
 
         return sr
     
-    def onsite(self,s, U0, t):
-            return 4 * t - self.qpc_potential(s) + self.disorder_func(s, U0)
+    def onsite(self,s, U0):
+            return 4 * self.t - self.qpc_potential(s) + self.disorder_func(s, U0)
 
     def hopping(self,site_i, site_j):
         xi, yi = site_i.tag
         xj, yj = site_j.tag
         return -exp(-0.5j * self.phi * (xi - xj) * (yi + yj))
     
-    #just gets an array with the voltages
+    #gets an array with the voltages
     def get_voltages(self):
         return np.array([self.V1,self.V2,self.V3,self.V4,self.V5,self.V6,self.V7,self.V8,self.V9,self.V10,self.V11])
 
@@ -190,11 +181,12 @@ class pixelarrayQPC():
         smatrix = kwant.smatrix(self.fqpc, self.energy, params=Params)
         return smatrix.transmission(1,0)  
     
-    def plot_system(self):
-        fig,ax=plt.subplots()
+    def plot_system(self,ax=None):
+        if ax==None:
+            fig,ax=plt.subplots()
         kwant.plot(self.qpc,ax=ax)
         rects=[]
-        for gate,dims in enumerate(allgatedims):
+        for gate,dims in enumerate(self.allgatedims):
             rect=Rectangle((dims[1],dims[3]),dims[2]-dims[1],dims[4]-dims[3],zorder=999)
             rects.append(rect)
             ax.text(x=dims[1],y=dims[3],s=str(gate))
@@ -202,8 +194,12 @@ class pixelarrayQPC():
             
         pc=PatchCollection(rects, facecolor='green',alpha=10)
         ax.add_collection(pc)
+        return ax
    
-    def plot_disorder(self,bounds=((0,L),(0,W)),ax=None):
+    #plot disorder and below plot_potential are both due for an update
+    def plot_disorder(self,bounds=None,ax=None):
+        if bounds==None:
+            bounds=((0,self.L),(0,self.W))
         if ax is None:
             fig,ax=plt.subplots()
         vals=np.zeros([bounds[0][1]-bounds[0][0],bounds[1][1]-bounds[1][0]])
@@ -219,7 +215,9 @@ class pixelarrayQPC():
         plt.colorbar(h)
         return fig,ax,vals
         
-    def plot_potential(self,bounds=((0,L),(0,W)),ax=None):
+    def plot_potential(self,bounds=None,ax=None):
+        if bounds==None:
+            bounds=((0,self.L),(0,self.W))
         self.calc_potential()
         if ax is None:
             fig,ax=plt.subplots()
@@ -293,12 +291,12 @@ class pixelarrayQPC():
             return fig,ax,h
         scattering_wf = wfs(lead)  # all scattering wave functions from lead "lead"
         if self_plot:
-            h=ax.imshow(np.sum(abs(scattering_wf)**2, axis=0).reshape((L,W)).T,origin='lower',cmap='inferno')
+            h=ax.imshow(np.sum(abs(scattering_wf)**2, axis=0).reshape((self.L,self.W)).T,origin='lower',cmap='inferno')
             
         
             
         # kwant.plotter.map(self.fqpc, np.sum(abs(scattering_wf)**2, axis=0),ax=ax)
-        return fig,ax,h
+        return ax
 
     def pool_func(self,vals):
         result1=[]

@@ -1,4 +1,3 @@
-from numpy.lib.npyio import save
 import cma
 
 # general
@@ -18,12 +17,14 @@ def load_es(folder):
         es=pickle.loads(string)
     return es
 
-def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=0.5,stop_time=None,callbacks=[None],args=[],options={}):
+def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=0.5,stop_time=None,callbacks=[None],args=[],options={},QPC=None):
     #make a seperate folder for this run
     newfolder,run_id=datahandler.next_outcmaes_folder_name()
     print("data saved to:")
     print(newfolder)
     os.mkdir(newfolder[:-1])
+    if QPC!=None:
+        datahandler.save_qpc(QPC,run_id)
     
     #start a datadict and measure the starting point, cma-es for some reason doesnt measure the starting point
     datadict={'next_key':0,'measurements':{},'starting_point':{'next_key':0,'measurements':{}}}
@@ -52,6 +53,8 @@ def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=
     datahandler.save_data(datadict,newfolder)
         
     return x,es, run_id
+
+
 
 
 def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=None,callbacks=[None],args=[],options={}):
@@ -87,3 +90,4 @@ def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=Non
     save_es(es,folder)
 
     return es.result.xbest, es, run_id
+

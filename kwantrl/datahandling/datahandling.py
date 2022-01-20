@@ -68,7 +68,7 @@ class datahandler():
         return return_dict
 
     def load_transformed_data(self,run_id=None,folder=None):
-        return self.transform_data(self.load_data(run_id,folder))
+        return self.transform_data(self.load_data(run_id,folder)) , self.load_data(run_id,folder)['starting_point']['measurements']['0']
 
     def save_qpc(self,QPC,run_id=None,folder=None):
         if run_id!=None:

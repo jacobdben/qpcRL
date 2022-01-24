@@ -13,7 +13,7 @@ class plotter_class():
 
         self.best_call=np.argmin(self.data['loss'])
         self.best_loss=self.data['loss'][self.best_call]
-        mpl.rcParams['figure.dpi']=300
+        # mpl.rcParams['figure.dpi']=300
         mpl.rcParams['figure.dpi']=200
         mpl.rcParams["figure.facecolor"]='white'
         mpl.rcParams["axes.facecolor"]='white'

@@ -7,8 +7,8 @@ import numpy as np
 #print(plt.style.available) for available styles
 
 class plotter_class():
-    def __init__(self,run_id) -> None:
-        self.data,self.starting_point=datahandler().load_transformed_data(run_id)
+    def __init__(self,run_id,data_path=None) -> None:
+        self.data,self.starting_point=datahandler(data_path).load_transformed_data(run_id)
         self.run_id=run_id
 
         self.best_call=np.argmin(self.data['loss'])

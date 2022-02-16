@@ -91,3 +91,13 @@ def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=Non
 
     return es.result.xbest, es, run_id
 
+def cma_involved(datahandler,options={},QPC=None):
+    newfolder,run_id=datahandler.next_outcmaes_folder_name()
+    print("data saved to:")
+    print(newfolder)
+    os.mkdir(newfolder)
+    if QPC!=None:
+        datahandler.save_qpc(QPC,run_id)    
+
+
+

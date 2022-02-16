@@ -17,18 +17,36 @@ def generate_polynomials(x,params):
     return np.sum([p*(x**i)[:,np.newaxis] for i,p in enumerate(params)],axis=0)
 
 
-def fourier_polynomials_to_voltages(vals,polynomials):
-    if len(vals)!=polynomials.shape[0]:
-        raise Exception('len(vals) and polynomials.shape[0] do no match')
+def fourier_polynomials_to_voltages(polynomials,vals=None):
+    """Converts polynomials of fourier-coefficients into their corresponding voltages
+
+    Args:
+        polynomials (list): list of lists of polynomials to convert, should be either 9 parameters or 8 if vals is given 
+        vals (list, optional): another way to give the fourier common mode. Defaults to None.
+
+    Raises:
+        Exception: if vals is provided and the length of the polynomials and vals do not match
+
+    Returns:
+        list of lists: Voltages at each time step, outer list is over time, inner lists is over the different gates.
+    """
+    vals_given=False
+    if isinstance(vals,list) or isinstance(vals,np.ndarray):
+        vals_given=True
+        if len(vals)!=polynomials.shape[0]:
+            raise Exception('len(vals) and polynomials.shape[0] do not match')
 
     #converting polynomials of the evolution of fourier modes into evolution of voltages
     #could probably be made into an array operation but requires changes in fourier_modes module
     #and doesnt seem to take very long time.
     voltages=[]
-    for avg_voltage,modes in zip(vals,polynomials):
-        fourier_modes=[avg_voltage] 
-        fourier_modes.extend(modes)
-        voltages.append(fourier_to_potential(fourier_modes)[1].ravel())
+    for i,modes in enumerate(polynomials):
+        if vals_given:
+            fourier_modes=[vals[i]] 
+            fourier_modes.extend(modes)
+            voltages.append(fourier_to_potential(fourier_modes)[1].ravel())
+        else:
+            voltages.append(fourier_to_potential(modes)[1].ravel())
     return voltages
 
 def trajectory_func_to_optimize(X,table,common_mode,QPC_instance,order,loss_function,bounds,pfactor,num_cpus):
@@ -37,7 +55,7 @@ def trajectory_func_to_optimize(X,table,common_mode,QPC_instance,order,loss_func
     polynomials=generate_polynomials(np.linspace(0,1,len(common_mode)),X) #previously just commom mode as first argument
 
     #convert all the fourier modes to voltages and ensure they are true within the constraints
-    voltages=fourier_polynomials_to_voltages(common_mode,polynomials)
+    voltages=fourier_polynomials_to_voltages(polynomials,vals=common_mode)
     voltages_send,penalty=new_point_array(np.array(voltages),bounds,offset=np.array(common_mode))
 
     #perform the measurement parallelized

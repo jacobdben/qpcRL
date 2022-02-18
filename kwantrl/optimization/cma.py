@@ -1,4 +1,7 @@
 import cma
+from multiprocessing import Pool, cpu_count
+from kwantrl.datahandling.datahandling import datahandler as dat_class
+from functools import partial
 
 # general
 import numpy as np
@@ -55,6 +58,52 @@ def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=
     return x,es, run_id
 
 
+def cma_p(func_to_minimize,starting_point=np.zeros(9),sigma=0.5,datahandler=None,QPC=None,options=None):
+
+    if datahandler==None:
+        datahandler=dat_class()
+    #make a seperate folder for this run
+    newfolder,run_id=datahandler.next_outcmaes_folder_name()
+    print("data saved to:")
+    print(newfolder)
+    os.mkdir(newfolder[:-1])
+    if QPC!=None:
+        datahandler.save_qpc(QPC,run_id)
+    
+    #start a datadict and measure the starting point, cma-es for some reason doesnt measure the starting point
+    datadict={'next_key':0,'measurements':{},'starting_point':{'next_key':0,'measurements':{}}}
+    func_to_minimize(starting_point,datadict['starting_point'])
+
+    if options == None:
+        options={'timeout':100,'popsize':cpu_count()}
+
+    options['verb_filenameprefix']=newfolder
+    
+    
+    es=cma.CMAEvolutionStrategy(starting_point,sigma,options)
+
+    num_cpus=cpu_count()
+
+    func_to_minimize=partial(func_to_minimize,table=datadict)
+    
+    while not es.stop():
+        solutions=es.ask()
+        with Pool(num_cpus) as p:
+            result=p.map(func_to_minimize,solutions)
+        es.tell(solutions,result)
+        es.disp()
+    es.result_pretty()[0][0]
+
+    with open(newfolder+"stopping_criterion.txt",mode='w') as file_object:
+        print(es.stop(),file=file_object)
+    
+    #save the es instance
+    save_es(es,newfolder)
+    
+    #save the datadict
+    datahandler.save_data(datadict,newfolder)
+
+    return es.best, es, run_id
 
 
 def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=None,callbacks=[None],args=[],options={}):

@@ -54,12 +54,39 @@ def trajectory_func_to_optimize(X,table,common_mode,QPC_instance,order,loss_func
     X=X.reshape(order,-1)
     polynomials=generate_polynomials(np.linspace(0,1,len(common_mode)),X) #previously just commom mode as first argument
 
-    #convert all the fourier modes to voltages and ensure they are true within the constraints
+    #convert all the fourier modes to voltages and ensure they are within the constraints
     voltages=fourier_polynomials_to_voltages(polynomials,vals=common_mode)
     voltages_send,penalty=new_point_array(np.array(voltages),bounds,offset=np.array(common_mode))
 
     #perform the measurement parallelized
     conductance_trace=QPC_instance.parallel_transmission(voltages_send,num_cpus=num_cpus)
+
+    #evaluate 
+    loss=loss_function(np.array(conductance_trace))
+
+    key=table['next_key']
+    table['next_key']+=1
+    
+    table['measurements'][key]={'loss':loss+penalty*pfactor,'staircase':conductance_trace,'x':X.ravel().tolist(),'voltages':voltages_send.tolist(),'deriv_metric':loss,'xaxis':common_mode.tolist()}
+    
+    return loss+penalty*pfactor
+
+
+
+def trajectory_func_to_optimize2(X,table,common_mode,QPC_instance,order,loss_function,bounds,pfactor,num_cpus):
+    #first generate full array of polynomials with shape(len(common_mode),num of polynomials (with fourier pixels: 8))
+    X=X.reshape(order,-1)
+    polynomials=generate_polynomials(np.linspace(0,1,len(common_mode)),X) #previously just commom mode as first argument
+
+    #convert all the fourier modes to voltages and ensure they are within the constraints
+    voltages=fourier_polynomials_to_voltages(polynomials,vals=common_mode)
+    voltages_send,penalty=new_point_array(np.array(voltages),bounds,offset=np.array(common_mode))
+
+    #perform the measurement
+    conductance_trace=[]
+    for voltage in voltages_send:
+        QPC_instance.set_all_pixels(voltage)
+        conductance_trace.append(QPC_instance.transmission())
 
     #evaluate 
     loss=loss_function(np.array(conductance_trace))

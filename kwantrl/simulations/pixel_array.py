@@ -315,6 +315,7 @@ class pixelarrayQPC():
         if num_cpus==None:
             num_cpus=cpu_count()
         elif num_cpus>cpu_count():
+            print('requested higher cpu count than available on the computer, not sure what this will result in')
             num_cpus=cpu_count()
         
         split_vals=self.split_vals(vals,num_cpus)

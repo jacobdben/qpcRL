@@ -1,0 +1,46 @@
+from kwantrl.simulations.pixel_array import pixelarrayQPC
+from kwantrl.optimization.trajectory_optimization import trajectory_func_to_optimize2
+from kwantrl.optimization.cma import cma_p
+from kwantrl.lossfunctions.staircasiness import staircasiness
+from kwantrl.datahandling.datahandling import datahandler
+import numpy as np
+from functools import partial
+from multiprocessing import cpu_count
+# import cma
+import os
+import pickle
+
+start=-3
+stop=2
+steps=200
+
+# Parameters for QPC
+disorder=0.15
+outer_gates=-3
+B_field=0
+energy=1
+
+# Initialize loss function
+stairs=staircasiness(delta=0.05,last_step=20)
+
+# Set common voltage sweep
+common_voltages=np.linspace(start,stop,steps)
+
+
+# Initialize QPC instance and set parameters
+QPC=pixelarrayQPC(plot=False)
+
+QPC.U0=disorder
+QPC.energy=energy
+QPC.V1=outer_gates
+QPC.V11=outer_gates
+QPC.phi=B_field
+
+dat=datahandler()
+
+order=2
+start_point=np.zeros(shape=(order,8)).ravel()
+kwargs={'common_mode':common_voltages,'QPC_instance':QPC,'order':order,'loss_function':stairs.window_loss,'bounds':(-4,3),'pfactor':0.001,'num_cpus':cpu_count()}
+actual_func_to_minimize=partial(trajectory_func_to_optimize2,**kwargs)
+test=cma_p(actual_func_to_minimize,starting_point=start_point,QPC=QPC)
+# b=test.run()

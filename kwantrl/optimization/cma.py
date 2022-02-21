@@ -82,7 +82,7 @@ def cma_p(func_to_minimize,starting_point=np.zeros(9),sigma=0.5,datahandler=None
     
     es=cma.CMAEvolutionStrategy(starting_point,sigma,options)
     es.logger.disp_header()
-    num_cpus=cpu_count()
+    num_cpus=options['popsize'] 
 
     func_to_minimize=partial(func_to_minimize,table=datadict)
     

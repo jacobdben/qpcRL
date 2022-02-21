@@ -1,0 +1,9 @@
+#!/bin/sh
+#PBS -W group_list=ku_00067 -A ku_00067
+#PBS -l nodes=1:ppn=10
+#PBS -l walltime=24:00:00
+#PBS -l mem=4gb
+
+cd $PBS_O_WORKDIR
+
+/usr/bin/time python3 ./kwantrl/run_scripts/cma_cluster.py 10 10

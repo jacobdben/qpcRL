@@ -73,7 +73,7 @@ def trajectory_func_to_optimize(X,table,common_mode,QPC_instance,order,loss_func
 
 
 
-def trajectory_func_to_optimize2(X,table,common_mode,QPC_instance,order,loss_function,bounds,pfactor,num_cpus):
+def trajectory_func_to_optimize2(X,table,common_mode,QPC_instance,order,loss_function,bounds,pfactor):
     #first generate full array of polynomials with shape(len(common_mode),num of polynomials (with fourier pixels: 8))
     X=X.reshape(order,-1)
     polynomials=generate_polynomials(np.linspace(0,1,len(common_mode)),X) #previously just commom mode as first argument

@@ -6,9 +6,6 @@ from kwantrl.datahandling.datahandling import datahandler
 import numpy as np
 from functools import partial
 from multiprocessing import cpu_count
-# import cma
-import os
-import pickle
 import sys
 
 num_cpu = int(sys.argv[1])
@@ -44,7 +41,7 @@ dat=datahandler()
 
 order=2
 start_point=np.zeros(shape=(order,8)).ravel()
-kwargs={'common_mode':common_voltages,'QPC_instance':QPC,'order':order,'loss_function':stairs.window_loss,'bounds':(-4,3),'pfactor':0.001,'num_cpus':num_cpu}
+kwargs={'common_mode':common_voltages,'QPC_instance':QPC,'order':order,'loss_function':stairs.window_loss,'bounds':(-4,3),'pfactor':0.001}
 actual_func_to_minimize=partial(trajectory_func_to_optimize2,**kwargs)
 test=cma_p(actual_func_to_minimize,starting_point=start_point,QPC=QPC, options=dict({'timeout':timeout, 'popsize':num_cpu}) )
 # b=test.run()

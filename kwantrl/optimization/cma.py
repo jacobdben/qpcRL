@@ -104,7 +104,7 @@ def cma_p(func_to_minimize,starting_point=np.zeros(9),sigma=0.5,datahandler=None
     #save the datadict
     datahandler.save_data(datadict,newfolder)
 
-    return es.best(), es, run_id
+    return es.best, es, run_id
 
 
 def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=None,callbacks=[None],args=[],options={}):

@@ -1,6 +1,7 @@
 README.md
 setup.py
 kwantrl/__init__.py
+kwantrl/plot_test.py
 kwantrl.egg-info/PKG-INFO
 kwantrl.egg-info/SOURCES.txt
 kwantrl.egg-info/dependency_links.txt
@@ -25,6 +26,7 @@ kwantrl/optimization/fourier/fourier_modes_hardcoded.py
 kwantrl/plotting/__init__.py
 kwantrl/plotting/plotting.py
 kwantrl/run_scripts/__init__.py
+kwantrl/run_scripts/cma_cluster.py
 kwantrl/run_scripts/fourier_modes_run.py
 kwantrl/run_scripts/run.py
 kwantrl/run_scripts/run_trajectory.py

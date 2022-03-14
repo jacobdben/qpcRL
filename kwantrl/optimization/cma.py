@@ -58,7 +58,7 @@ def optimize_cma(func_to_minimize,datahandler,start_point,maxfevals=99999,sigma=
     return x,es, run_id
 
 
-def cma_p(func_to_minimize,starting_point=np.zeros(9),sigma=0.5,datahandler=None,QPC=None,options=None):
+def cma_p(func_to_minimize,function_args,starting_point=np.zeros(9),sigma=0.5,datahandler=None,QPC=None,options=None):
 
     if datahandler==None:
         datahandler=dat_class()
@@ -71,8 +71,9 @@ def cma_p(func_to_minimize,starting_point=np.zeros(9),sigma=0.5,datahandler=None
         datahandler.save_qpc(QPC,run_id)
     
     #start a datadict and measure the starting point, cma-es for some reason doesnt measure the starting point
-    datadict={'next_key':0,'measurements':{},'starting_point':{'next_key':0,'measurements':{}}}
-    func_to_minimize(starting_point,datadict['starting_point'])
+    datadict={'measurements':{},'starting_point':{'next_key':0,'measurements':{}}}
+    starting_results=func_to_minimize(starting_point,**function_args)
+    datadict['starting_point']=starting_results[1]
 
     if options == None:
         options={'timeout':100,'popsize':cpu_count()}
@@ -83,16 +84,25 @@ def cma_p(func_to_minimize,starting_point=np.zeros(9),sigma=0.5,datahandler=None
     es=cma.CMAEvolutionStrategy(starting_point,sigma,options)
     es.logger.disp_header()
     num_cpus=options['popsize'] 
-
-    func_to_minimize=partial(func_to_minimize,table=datadict)
     
+    par_func_to_minimize=partial(func_to_minimize,**function_args)
+    iteration=1
     while not es.stop():
         solutions=es.ask()
+        datadict['measurements'][str(iteration)]={}
         with Pool(num_cpus) as p:
-            result=p.map(func_to_minimize,solutions)
+            result_list=p.map(par_func_to_minimize,solutions)
+        # return result_list
+            result_list=np.array(result_list)
+            result=result_list[:,0].astype(float)
+            for index,data_to_save in enumerate(result_list[:,1]):
+                datadict['measurements'][str(iteration)][str(index)]=data_to_save
+            
+
         es.tell(solutions,result)
         es.logger.add()
         es.disp()
+        iteration+=1
     es.result_pretty()[0][0]
 
     with open(newfolder+"stopping_criterion.txt",mode='w') as file_object:

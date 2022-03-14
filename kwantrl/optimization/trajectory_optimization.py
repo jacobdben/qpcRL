@@ -73,7 +73,7 @@ def trajectory_func_to_optimize(X,table,common_mode,QPC_instance,order,loss_func
 
 
 
-def trajectory_func_to_optimize2(X,table,common_mode,QPC_instance,order,loss_function,bounds,pfactor):
+def trajectory_func_to_optimize2(X,common_mode,QPC_instance,order,loss_function,bounds,pfactor):
     #first generate full array of polynomials with shape(len(common_mode),num of polynomials (with fourier pixels: 8))
     X=X.reshape(order,-1)
     polynomials=generate_polynomials(np.linspace(0,1,len(common_mode)),X) #previously just commom mode as first argument
@@ -91,13 +91,12 @@ def trajectory_func_to_optimize2(X,table,common_mode,QPC_instance,order,loss_fun
     #evaluate 
     loss=loss_function(np.array(conductance_trace))
 
-    key=table['next_key']
-    table['next_key']+=1
+    # key=table['next_key']
+    # table['next_key']+=1
     
-    table['measurements'][key]={'loss':loss+penalty*pfactor,'staircase':conductance_trace,'x':X.ravel().tolist(),'voltages':voltages_send.tolist(),'deriv_metric':loss,'xaxis':common_mode.tolist()}
-    
-    return loss+penalty*pfactor
-
+    # table['measurements'][key]={'loss':loss+penalty*pfactor,'staircase':conductance_trace,'x':X.ravel().tolist(),'voltages':voltages_send.tolist(),'deriv_metric':loss,'xaxis':common_mode.tolist()}
+    return_table={'loss':loss+penalty*pfactor,'staircase':conductance_trace,'x':X.ravel().tolist(),'voltages':voltages_send.tolist(),'deriv_metric':loss,'xaxis':common_mode.tolist()}
+    return loss+penalty*pfactor, return_table
 
 
 

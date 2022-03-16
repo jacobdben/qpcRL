@@ -56,7 +56,7 @@ class datahandler():
             datadict=json.load(file)
         return datadict
         
-    def transform_data(self,datadict):
+    def transform_data_legacy(self,datadict):
         return_dict={}
         #initialized dict with the correct keys
         for key in datadict['measurements']['0']:
@@ -68,9 +68,29 @@ class datahandler():
                 return_dict[key2].append(value)
         return return_dict
 
-    def load_transformed_data(self,run_id=None,folder=None):
+    def transform_data(self,datadict):
+        return_dict={}
+
+        num_iterations=len(datadict['measurements'].keys())
+        measurements_per_iteration=len(datadict['measurements']['1'].keys())
+        print(f'Dictionary contains {num_iterations} iterations with {measurements_per_iteration} measurements per iteration' )
+        #initialized dict with the correct keys
+        for key in datadict['measurements']['1']['0']:
+            return_dict[str(key)]=[]
+
+        #fills dict lists with values
+        for iteration_dict in datadict['measurements'].values(): #iterations
+            for measurement_dict in iteration_dict.values():
+                for key,value in measurement_dict.items():
+                    return_dict[key].append(value)
+        return return_dict
+
+    def load_transformed_data(self,run_id=None,folder=None,legacy=False):
         full_dataset=self.load_data(run_id,folder)
-        return self.transform_data(full_dataset) , full_dataset['starting_point']['measurements']['0']
+        if legacy:
+            return self.transform_data_legacy(full_dataset) , full_dataset['starting_point']['measurements']['0']
+        
+        return self.transform_data(full_dataset) , full_dataset['starting_point']
 
     def save_qpc(self,QPC,run_id=None,folder=None):
         if run_id!=None:

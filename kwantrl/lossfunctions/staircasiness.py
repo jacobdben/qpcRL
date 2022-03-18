@@ -130,7 +130,7 @@ class staircasiness():
         for i in range(len(staircase)-1):
               res+=np.cbrt(np.abs(staircase[i+1]-staircase[i])+0.01)
         
-        P_not_zeros=len(np.where(staircase>1e-5)[0])/len(staircase)
+        P_not_zeros=len(np.where(staircase>1e-1)[0])/len(staircase)
         
         return res/(P_not_zeros+1)
     

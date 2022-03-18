@@ -11,6 +11,11 @@ import sys
 num_cpu = int(sys.argv[1])
 timeout = float(sys.argv[2])
 
+W=int(sys.argv[3])
+L=int(sys.argv[4])
+scale=int(sys.argv[5])
+
+
 start=-3
 stop=5
 steps=300
@@ -29,7 +34,7 @@ common_voltages=np.linspace(start,stop,steps)
 
 
 # Initialize QPC instance and set parameters
-QPC=pixelarrayQPC(plot=False)
+QPC=pixelarrayQPC(W=W,L=L,plot=False,gate_kwargs={'scale':scale})
 
 QPC.U0=disorder
 QPC.energy=energy

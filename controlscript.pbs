@@ -8,4 +8,4 @@
 
 cd $PBS_O_WORKDIR
 
-/usr/bin/time python3 ./kwantrl/run_scripts/cma_cluster.py 20 100000
+/usr/bin/time python3 ./kwantrl/run_scripts/cma_cluster.py 20 140000 $1 $2 $3 

@@ -41,8 +41,8 @@ def make_gates(W,L,scale=1,distance_to_gate=5,pixel_size=5,spacing=1):
     array_start_y=center[1]-scale*(1.5*pixel_size+spacing)
     array_stop_y=center[1]+scale*(1.5*pixel_size+spacing)
 
-    gate1dims=[distance_to_gate,array_start_x,array_stop_x,-5,array_start_y-spacing]
-    gate11dims=[distance_to_gate,array_start_x,array_stop_x,array_stop_y+spacing,W+5]
+    gate1dims=[distance_to_gate,array_start_x,array_stop_x,-5,array_start_y-scale*spacing]
+    gate11dims=[distance_to_gate,array_start_x,array_stop_x,array_stop_y+scale*spacing,W+5]
 
     gates=[gate1dims]
     for i in range(3):
@@ -354,6 +354,8 @@ class pixelarrayQPC():
             final_result=p.map(self.pool_func,split_vals)
         return [val for sublist in final_result for val in sublist] #returns the entire trace as one list
         
+def par_transmission_wrapper(object,vals,num_cpus=None):
+    return object.parallel_transmission(vals,num_cpus)
         
 if __name__=="__main__":
     QPC=pixelarrayQPC(plot=False)
@@ -363,3 +365,4 @@ if __name__=="__main__":
         QPC.set_all_pixels(val)
         result.append(QPC.transmission())
     print(result)
+

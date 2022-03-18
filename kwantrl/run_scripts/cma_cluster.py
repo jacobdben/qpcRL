@@ -12,8 +12,8 @@ num_cpu = int(sys.argv[1])
 timeout = float(sys.argv[2])
 
 start=-3
-stop=2
-steps=200
+stop=5
+steps=300
 
 # Parameters for QPC
 disorder=0.15
@@ -41,7 +41,7 @@ dat=datahandler()
 
 order=2
 start_point=np.zeros(shape=(order,8)).ravel()
-kwargs={'common_mode':common_voltages,'QPC_instance':QPC,'order':order,'loss_function':stairs.window_loss,'bounds':(-4,3),'pfactor':0.001}
+kwargs={'common_mode':common_voltages,'QPC_instance':QPC,'order':order,'loss_function':stairs.window_loss,'bounds':(-5,7),'pfactor':0.001}
 # actual_func_to_minimize=partial(trajectory_func_to_optimize2,**kwargs)
 test=cma_p(trajectory_func_to_optimize2,function_args=kwargs,datahandler=datahandler(),starting_point=start_point,QPC=QPC, options=dict({'timeout':timeout, 'popsize':num_cpu}) )
 # b=test.run()

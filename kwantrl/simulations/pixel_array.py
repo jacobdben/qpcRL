@@ -32,8 +32,31 @@ def rectangular_gate_pot(dims):
 
     return func
 
+# regular_sim={'distance_to_gate':5,'left':30,'right':50,'spacing':2.5,'W':80,'L':80,'gates_outside':0}
+def make_gates(W,L,scale=1,distance_to_gate=5,pixel_size=5,spacing=1):
+    #default size of pixels is 5x5
+    center=(L/2,W/2)
+    array_start_x=center[0]-scale*(1.5*pixel_size+spacing)
+    array_stop_x=center[0]+scale*(1.5*pixel_size+spacing)
+    array_start_y=center[1]-scale*(1.5*pixel_size+spacing)
+    array_stop_y=center[1]+scale*(1.5*pixel_size+spacing)
 
-def make_gates(distance_to_gate=5,left=30,right=50,spacing=2.5,W=80,L=80,gates_outside=0):
+    gate1dims=[distance_to_gate,array_start_x,array_stop_x,-5,array_start_y-spacing]
+    gate11dims=[distance_to_gate,array_start_x,array_stop_x,array_stop_y+spacing,W+5]
+
+    gates=[gate1dims]
+    for i in range(3):
+        for j in range(3):
+            gates.append([distance_to_gate,
+                           array_start_x+j*scale*(pixel_size+spacing),
+                           array_start_x+j*scale*(pixel_size+spacing)+scale*pixel_size,
+                           array_start_y+i*scale*(pixel_size+spacing),
+                           array_start_y+i*scale*(pixel_size+spacing)+scale*pixel_size])
+    gates.append(gate11dims)
+    return gates
+    
+
+def make_gates_old(distance_to_gate,left,right,spacing,W,L,gates_outside=0):
     pixel_size=(right-left-2*spacing)/3
     array_size=3*pixel_size+2*spacing
     
@@ -44,6 +67,8 @@ def make_gates(distance_to_gate=5,left=30,right=50,spacing=2.5,W=80,L=80,gates_o
     
     bottom_of_array=center[0]-array_size/2
     gates=[gate1dims]
+
+
     for i in range(3):
         for j in range(3):
             gates.append([distance_to_gate,
@@ -55,7 +80,7 @@ def make_gates(distance_to_gate=5,left=30,right=50,spacing=2.5,W=80,L=80,gates_o
     return gates
  
 class pixelarrayQPC():
-    def __init__(self,W=70,L=120,plot=False,disorder_type='regular',distance=5,t=None):
+    def __init__(self,W=70,L=120,plot=False,disorder_type='regular',t=None,old_gates=False,gate_kwargs={}):
         #------------------------------------------------------------------------------
         # Set up KWANT basics
         # Parameters are:
@@ -96,11 +121,17 @@ class pixelarrayQPC():
         self.V11=-2
 
         self.lattice=np.meshgrid(np.arange(L),np.arange(W),indexing='ij')
+        if old_gates:
+            print('old_gates are not well integrated with different sized simulations')
+            self.allgatedims=make_gates_old(distance_to_gate=5,left=int(L/2-10),right=int(L/2+10),W=W,L=L,spacing=2,gates_outside=10)
+        else:
+            self.allgatedims=make_gates(W,L,**gate_kwargs)
 
-        self.allgatedims=make_gates(distance_to_gate=distance,left=int(L/2-10),right=int(L/2+10),W=W,L=L,spacing=2,gates_outside=10)
-
-        self.all_gate_calcs=[rectangular_gate_pot(dims)(self.lattice[0],self.lattice[1],1) for dims in self.allgatedims]
-
+        self.all_gate_calcs=np.array([rectangular_gate_pot(dims)(self.lattice[0],self.lattice[1],1) for dims in self.allgatedims])
+        
+        #this should be changed
+        self.disorder_values=make_disorder(L, W, length_scale=5,random_seed=2)
+        self.pixel_disorder_values=make_pixel_disorder(L,W,self.allgatedims[1:10])
         if disorder_type=='pixel':
             self.disorder_func=self.pixel_disorder
         else:
@@ -116,8 +147,7 @@ class pixelarrayQPC():
         self.fqpc = self.qpc.finalized()
         self.fqpc=self.fqpc.precalculate(self.energy)
 
-        self.disorder_values=make_disorder(L, W, length_scale=5,random_seed=2)
-        self.pixel_disorder_values=make_pixel_disorder(L,W,self.allgatedims[1:10])
+        
 
     def disorder(self,site,U0):
         x,y=site.tag
@@ -166,7 +196,7 @@ class pixelarrayQPC():
     #calculates the total potential from a vector with voltages multiplied with the precomputed gate potentials with V=1, then sums it together
     #this should be called in every function that wants to calculate anything
     def calc_potential(self):
-        self.calculated_potential=np.einsum('i,ikj->kj',self.get_voltages(),np.array(self.all_gate_calcs))
+        self.calculated_potential=np.einsum('i,ikj->kj',self.get_voltages(),self.all_gate_calcs)
         # return np.einsum('i,ikj->kj',self.get_voltages(),np.array(self.all_gate_calcs))
 
     

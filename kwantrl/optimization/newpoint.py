@@ -33,6 +33,7 @@ def new_point_array(x,bounds,offset=0):
     prob.solve()
 
     new_point=y.value
+    # print(new_point)
     return new_point, cp.sum_squares(x-new_point).value
 
 

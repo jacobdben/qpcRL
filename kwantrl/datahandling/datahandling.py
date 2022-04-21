@@ -6,12 +6,12 @@ import json
 
 
 # save_data_path="C:/Users/Torbjørn/Google Drev/UNI/MastersProject/EverythingkwantRL/saved_data" 
-# save_data_path='/Users/qdev_26/Documents/PhD/kwantrl/kwantrl_data'
+save_data_path='/Users/qdev_26/Documents/PhD/kwantrl/kwantrl_data'
 # save_data_path="/nbi/user-scratch/f/fxg433/projects/saved_data2"
 # save_data_path="F:/qcodes_data/BBQPC3/saved_data"
 # save_data_path="F:/qcodes_data/BBQPC_2021/saved_data"
 # save_data_path="F:/qcodes_data/BBQPC2_2021/saved_data"
-save_data_path="/home/projects/ku_00067/scratch/kwantrl_data"
+# save_data_path="/home/projects/ku_00067/scratch/kwantrl_data"
 
 #%%
 class datahandler():

@@ -1,0 +1,11 @@
+#!/bin/sh
+#PBS -W group_list=ku_00067 -A ku_00067
+#PBS -l nodes=1:ppn=20
+#PBS -l walltime=48:00:00
+#PBS -l mem=4gb
+#PBS -e cluster_outputs/test.err
+#PBS -o cluster_outputs/test.log
+
+cd $PBS_O_WORKDIR
+
+/usr/bin/time python3 ./kwantrl/run_scripts/cma_cluster.py 20 140000 $1 $2 $3 

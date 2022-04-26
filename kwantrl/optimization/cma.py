@@ -151,13 +151,72 @@ def resume_cma(func_to_minimize,run_id,datahandler,maxfevals=99999,stop_time=Non
 
     return es.result.xbest, es, run_id
 
-def cma_involved(datahandler,options={},QPC=None):
-    newfolder,run_id=datahandler.next_outcmaes_folder_name()
-    print("data saved to:")
-    print(newfolder)
-    os.mkdir(newfolder)
-    if QPC!=None:
-        datahandler.save_qpc(QPC,run_id)    
 
-
-
+class CmaRunner():
+    def __init__(self,measurement_func,starting_point,constraint_func=lambda x: (x,0),sigma0=0.5,measurement_func_args=[],datahandler=None,QPC=None,cma_options={},run_id=None) -> None:
+        if run_id!=None:
+            raise Exception("continuing not implemented here yet")
+        
+        self.measurement_func=partial(measurement_func,*measurement_func_args)
+        self.constraint_func=constraint_func
+        
+        if datahandler==None:
+            self.datahandler=dat_class()
+        else:
+            self.datahandler=datahandler
+            
+        #make a seperate folder for this run
+        self.newfolder,self.run_id=self.datahandler.next_outcmaes_folder_name()
+        print(f"data saved to:{self.newfolder}")
+        os.mkdir(self.newfolder[:-1])
+        if QPC!=None:
+            self.datahandler.save_qpc(QPC,run_id)
+        
+        cma_options['verb_filenameprefix']=self.newfolder
+        opts=cma.CMAOptions(**cma_options)
+        self.es = cma.CMAEvolutionStrategy(starting_point,sigma0,opts)
+        #self.es.opts.set(options)
+        self.iter_nr=1
+        
+        self.datadict={'measurements':{},'starting_point':{}}
+        self.datadict['starting_point']=self._one_measurement(starting_point,starting_point=True)
+        
+    def optimize(self,):
+        while not self.es.stop():
+            self._one_iteration()   
+        
+        self.es.result_pretty()
+        
+        with open(self.newfolder+"stopping_criterion.txt",mode='w') as file_object:
+            print(self.es.stop(),file=file_object)
+    
+        #save the es instance
+        save_es(self.es,self.newfolder)
+        
+        #save the datadict
+        self.datahandler.save_data(self.datadict,self.newfolder)
+    
+    def _one_iteration(self,):
+        self.pop_nr=1
+        self.datadict['measurements'][str(self.iter_nr)]={}
+        if not self.es.stop():
+            proposed_solutions=self.es.ask()
+            evaluated_solutions=[self._one_measurement(proposed_solution) for proposed_solution in proposed_solutions]
+            self.es.tell(proposed_solutions,evaluated_solutions)
+            self.es.logger.add()
+            self.es.disp()
+            self.pop_nr+=1
+            self.iter_nr+=1        
+        
+    def _one_measurement(self,solution,starting_point=False):
+        new_solution,penalty = self.constraint_func(solution)
+        results_dict=self.measurement_func(new_solution)
+        results_dict['penalty']=penalty
+        self._add_to_dict(results_dict,starting_point)
+        return results_dict['val']+penalty
+        
+    def _add_to_dict(self,results_dict,starting_point=False):
+        if starting_point:
+            self.datadict['starting_point']=results_dict
+        else:
+            self.datadict['measurements'][str(self.iter_nr)][str(self.pop_nr)]=results_dict

@@ -156,7 +156,7 @@ class CmaRunner():
     def __init__(self,measurement_func,starting_point,constraint_func=lambda x: (x,0),sigma0=0.5,measurement_func_args=[],datahandler=None,QPC=None,cma_options={},run_id=None) -> None:
         if run_id!=None:
             raise Exception("continuing not implemented here yet")
-        
+        #possibly move things into optimize, there is no need to init all the stuff at first.
         self.measurement_func=partial(measurement_func,*measurement_func_args)
         self.constraint_func=constraint_func
         

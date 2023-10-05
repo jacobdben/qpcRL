@@ -1,4 +1,0 @@
-/home/people/torras/miniconda3/lib/python3.7/site-packages/kwant/solvers/default.py:18: RuntimeWarning: MUMPS is not available, SciPy built-in solver will be used as a fallback. Performance can be very poor in this case.
-  "Performance can be very poor in this case.", RuntimeWarning)
-286235.32user 1715084.70system 27:55:16elapsed 1991%CPU (0avgtext+0avgdata 670524maxresident)k
-272864inputs+245712outputs (162major+2615769489minor)pagefaults 0swaps

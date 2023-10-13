@@ -70,8 +70,9 @@ def parallel_cma(func_to_minimize,function_args, starting_point, sigma=0.5,optio
         t_start = time()
         
         with ProcessPoolExecutor(cpu_count()) as executor:
-            results = np.array(list(executor.map(par_func_to_minimize, solutions)))
-            results = results[:,0].astype(float)
+            results = list(executor.map(par_func_to_minimize, solutions))
+            results = [result[0] for result in results]
+            results = np.array(results[:,0]).astype(float)
 
             for i in range(len(results)):
                 cmaesdata.add(iteration, solutions[i], results[i])

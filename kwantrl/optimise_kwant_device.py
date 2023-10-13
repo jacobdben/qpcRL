@@ -85,7 +85,7 @@ start_point=np.zeros(shape=(order,8)).ravel()
 kwargs={'common_mode':common_voltages,'qpca':qpca,'order':order,
         'loss_function':stairs.multiple_windows_histogram,'bounds':(-3,3)}
 
-cma_options={'timeout':100,'popsize':cpu_count()}
+cma_options={'timeout':2,'popsize':cpu_count()}
 
 
 parallel_cma(func_to_optimize,function_args=kwargs, starting_point=start_point, options=cma_options)

@@ -8,7 +8,7 @@ Created on Wed Oct 11 10:35:11 2023
 
 import numpy as np
 import matplotlib.pyplot as plt
-
+from os import cpu_count
 from lossfunctions.staircasiness import staircasiness
  
 from optimization.cma import parallel_cma
@@ -54,9 +54,6 @@ def func_to_optimize(X, common_mode, qpca, order, bounds, loss_function):
 
     for i in range(len(common_mode)):
         
-        if not i%10:
-            print(i)
-        
         qpca.set_gate('Vp1', voltages[i, 0])
         qpca.set_gate('Vp2', voltages[i, 1])
         qpca.set_gate('Vp3', voltages[i, 2])
@@ -70,12 +67,14 @@ def func_to_optimize(X, common_mode, qpca, order, bounds, loss_function):
     
 
     
-    return loss_function(np.array(Gs))#, Gs, voltages
+    return loss_function(np.array(Gs)), Gs
     
 
+
+print("CPUs available:", cpu_count())
+
 qpca = initialise_device(L=500, W=300)
-qpca.plot_gates()
-qpca.plot_potential_cross_sect()
+
 
 stairs=staircasiness(cond_window=(1e-1, 11))
 
@@ -86,17 +85,8 @@ start_point=np.zeros(shape=(order,8)).ravel()
 kwargs={'common_mode':common_voltages,'qpca':qpca,'order':order,
         'loss_function':stairs.multiple_windows_histogram,'bounds':(-3,3)}
 
-parallel_cma(func_to_optimize,function_args=kwargs, starting_point=start_point)
+cma_options={'timeout':100,'popsize':cpu_count()}
 
 
-#res = func_to_optimize(start_point, common_voltages, qpca, order, (-3,3), stairs.multiple_windows_histogram)
+parallel_cma(func_to_optimize,function_args=kwargs, starting_point=start_point, options=cma_options)
 
-#plt.figure()
-#plt.plot(res[2])
-#plt.show()
-
-#plt.figure()
-#plt.plot(res[2][:,0], res[1])
-#plt.show()
-
-#print(res[0])

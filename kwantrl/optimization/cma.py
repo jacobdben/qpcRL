@@ -1,7 +1,7 @@
 import cma
 from os import cpu_count
 from concurrent.futures import ProcessPoolExecutor
-
+from time import time
 from functools import partial
 
 # general
@@ -49,11 +49,11 @@ def parallel_cma(func_to_minimize,function_args, starting_point, sigma=0.5,optio
     
     #start a datadict and measure the starting point, cma-es for some reason doesnt measure the starting point
     cmaesdata = CmaesData()
-    starting_results = par_func_to_minimize(starting_point)
+    starting_results = par_func_to_minimize(starting_point)[0]
     cmaesdata.add(0, starting_point, starting_results)
 
     if options == None:
-        options={'timeout':2,'popsize':cpu_count()}
+        options={'timeout':100,'popsize':cpu_count()}
 
     options['verb_filenameprefix'] = savefolder
     
@@ -67,13 +67,18 @@ def parallel_cma(func_to_minimize,function_args, starting_point, sigma=0.5,optio
     while not es.stop():
         solutions=es.ask()
         
+        t_start = time()
+        
         with ProcessPoolExecutor(cpu_count()) as executor:
-            results = np.array(list(executor.map(par_func_to_minimize, solutions))).astype(float)
-            print(results)
-            print(solutions)
+            results = np.array(list(executor.map(par_func_to_minimize, solutions)))
+            results = results[:,0].astype(float)
+
             for i in range(len(results)):
                 cmaesdata.add(iteration, solutions[i], results[i])
-            
+        
+        t_end = time()
+        dt = t_end-t_start
+        print(f"Time elapsed for iteration {iteration}: {dt}")
 
         es.tell(solutions,results)
         es.logger.add()

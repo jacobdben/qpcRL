@@ -11,23 +11,14 @@ from scipy.optimize import curve_fit
 
 
 class staircasiness():
-    def __init__(self,delta=0.05,last_step=20,favorite=100):
-        self.delta=delta
-        self.bins=[]
-        self.last_step=last_step
-        if isinstance(favorite,int):
-            favorite=[favorite]
-        self.favorite=favorite
-        for i in range(last_step):
-            self.bins.extend([i+1-delta,1+i+delta])
-            
-        self.arange=np.arange(1,last_step)
+    def __init__(self, cond_window=(1e-2, 11)):
+        self.cond_window = cond_window
             
 
     
     def window_loss(self,staircase,p=0.2, noise_eps=0):
-        upper_lim=7
-        lower_lim=1e-2
+        upper_lim=self.cond_window[1]
+        lower_lim=self.cond_window[0]
         if staircase[0]>upper_lim:
             return 1
         if (staircase<upper_lim).all() or (staircase>lower_lim).all():
@@ -66,17 +57,28 @@ class staircasiness():
     
 
             
-    def window_histogram(self,staircase,linear_factor=0,p=3,plot=False,ax=None):
-        if not ((staircase>1e-2) & (staircase<11)).any():
+    def window_histogram(self,staircase,linear_factor=0,p=3):
+        """
+        Project conductance onto a histogram (ie. a density of y-values) between
+        a minimum and maximum conductance, and punish uniform densities while
+        rewarding large peaks in the histogram
+        """
+        
+        
+        # Check that there are datapoints between cond_window[0] 
+        # and cond_window[1] conductance quanta
+        if not ((staircase>self.cond_window[0]) & (staircase<self.cond_window[1])).any():
             return 1e4
         
-        if not ((staircase<1e-2)).any():
+        # Check that there are datapoints below cond_window[0] conductance quanta
+        if not ((staircase<self.cond_window[0])).any():
             return 1e4
         
-        if not ((staircase>11)).any():
+        # Check that there are datapoints above cond_window[1] conductance quanta
+        if not ((staircase>self.cond_window[1])).any():
             return 1e4
         
-        mask=(staircase>1e-2) & (staircase<11)
+        mask=(staircase>self.cond_window[0]) & (staircase<self.cond_window[1])
         staircase=staircase[mask]
         
         num_bins=100
@@ -86,10 +88,43 @@ class staircasiness():
         width=bins[1]-bins[0]
         
         loss=np.sum(abs(np.diff(hist*width)+linear_factor)**p)
-        if plot:
-            if ax!=None:
-                bin_mids=[(bins[i]+bins[i+1])/2 for i in range(len(bins)-1)]
-                ax.plot(bin_mids,hist*width,label="%.3f"%loss)
+                
+        return 1/loss
+    
+    
+    def multiple_windows_histogram(self,staircase,linear_factor=0,p=3):
+        
+        # Check that there are datapoints between cond_window[0] 
+        # and cond_window[1] conductance quanta
+        if not ((staircase>self.cond_window[0]) & (staircase<self.cond_window[1])).any():
+            return 1e4
+        
+        # Check that there are datapoints below cond_window[0] conductance quanta
+        if not ((staircase<self.cond_window[0])).any():
+            return 1e4
+        
+        # Check that there are datapoints above cond_window[1] conductance quanta
+        if not ((staircase>self.cond_window[1])).any():
+            return 1e4
+        
+        windows=np.arange(1,min(np.max(staircase),self.cond_window[1]+1),2)
+        loss=0
+        for i in range(len(windows)-1):
+
+            mask=(staircase>=windows[i]) & (staircase<windows[i+1])
+            if not mask.any():
+                continue
+
+            num_bins=20
+        
+            hist,bins=np.histogram(staircase[mask],num_bins,density=True)
+            
+            
+            width=bins[1]-bins[0]
+            
+            loss+=np.sum(abs(np.diff(hist*width)+linear_factor)**p)
+
+
                 
         return 1/loss
 

@@ -17,6 +17,7 @@ from math import atan2, pi, sqrt
 from cmath import exp
 import scipy.linalg as la
 from scipy.constants import physical_constants
+from scipy.fft import fft2, ifft2, fftfreq
 
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
@@ -238,6 +239,27 @@ class KwantChip():
     
         self.disorder = magnitude*np.nan_to_num(disorder_int)
         
+    
+    def make_fourier_disorder(self, magnitude, length_scale, smoother='exponential', random_seed=42):
+        rng=np.random.RandomState(random_seed)
+        disorder=rng.uniform(-1,1,size=(self.L,self.W))
+        
+        
+        qx, qy = fftfreq(self.L), fftfreq(self.W)
+        Qx, Qy = np.meshgrid(qx, qy, indexing='ij')
+        
+        ft_dis = fft2(disorder)
+        
+        if smoother=='exponential':
+            disorder = np.real(ifft2(ft_dis*np.exp(-2*np.sqrt(Qx**2+Qy**2)*length_scale)))
+        elif smoother=='gaussian':
+            disorder = np.real(ifft2(ft_dis*np.exp(-2*(Qx**2+Qy**2)*length_scale**2)))
+        elif smoother=='hard':
+            disorder = np.real(ifft2(np.where(Qx**2+Qy**2 < (1/length_scale)**2, ft_dis, 0)))
+        
+        self.disorder = magnitude*disorder/np.max(np.abs(disorder))
+        
+        
 
     
     def get_potential(self, x, y):
@@ -342,6 +364,16 @@ class KwantChip():
         
         fig,ax=plt.subplots()
         h = ax.imshow(pot.T,origin='lower',extent=(bounds[0][0],bounds[0][1],bounds[1][0],bounds[1][1]))
+        plt.colorbar(h, label='potential [eV]', shrink=0.45)
+        plt.show()
+        
+    def plot_disorder(self, bounds=None):
+        
+        if bounds==None:
+            bounds=((0,self.L),(0,self.W))
+        
+        fig,ax=plt.subplots()
+        h = ax.imshow(self.disorder.T,origin='lower',extent=(bounds[0][0],bounds[0][1],bounds[1][0],bounds[1][1]))
         plt.colorbar(h, label='potential [eV]', shrink=0.45)
         plt.show()
     

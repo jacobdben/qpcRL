@@ -54,6 +54,9 @@ def func_to_optimize(X, common_mode, qpca, order, bounds, loss_function):
 
     for i in range(len(common_mode)):
         
+        if not i%10:
+            print(i)
+        
         qpca.set_gate('Vp1', voltages[i, 0])
         qpca.set_gate('Vp2', voltages[i, 1])
         qpca.set_gate('Vp3', voltages[i, 2])
@@ -73,7 +76,7 @@ def func_to_optimize(X, common_mode, qpca, order, bounds, loss_function):
 
 print("CPUs available:", cpu_count())
 
-qpca = initialise_device(L=500, W=300)
+qpca = initialise_device(L=200, W=80)
 
 
 stairs=staircasiness(cond_window=(1e-1, 11))
@@ -85,7 +88,7 @@ start_point=np.zeros(shape=(order,8)).ravel()
 kwargs={'common_mode':common_voltages,'qpca':qpca,'order':order,
         'loss_function':stairs.multiple_windows_histogram,'bounds':(-3,3)}
 
-cma_options={'timeout':2,'popsize':cpu_count()}
+cma_options={'timeout':2,'popsize':cpu_count(), 'maxiter':10}
 
 
 parallel_cma(func_to_optimize,function_args=kwargs, starting_point=start_point, options=cma_options)

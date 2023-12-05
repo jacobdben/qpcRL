@@ -19,4 +19,3 @@ def new_point_array(x,bounds,offset=0):
     new_point=y.value
 
     return new_point, cp.sum_squares(x-new_point).value
-

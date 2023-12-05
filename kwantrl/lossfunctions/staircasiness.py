@@ -83,7 +83,7 @@ class staircasiness():
         
         num_bins=100
     
-        hist,bins=np.histogram(staircase,num_bins,density=True)
+        hist,bins=np.histogram(staircase,num_bins,density=False)
         
         width=bins[1]-bins[0]
         
@@ -117,7 +117,7 @@ class staircasiness():
 
             num_bins=20
         
-            hist,bins=np.histogram(staircase[mask],num_bins,density=True)
+            hist,bins=np.histogram(staircase[mask],num_bins,density=False)
             
             
             width=bins[1]-bins[0]

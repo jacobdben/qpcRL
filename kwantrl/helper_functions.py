@@ -15,7 +15,7 @@ from os import cpu_count
 
 
 
-def initialise_device(L=200, W=150):
+def initialise_device(L=200, W=150, dis=None):
     
     a = 3000//W
 
@@ -96,11 +96,86 @@ def initialise_device(L=200, W=150):
     qpca.add_rect_gate(pixel9, dist=200, V=Vp, gate_name='Vp9')
 
 
+    if dis != None:
+        Ud, ls = dis
+        qpca.make_fourier_disorder(Ud, ls, random_seed=142)
+
     qpca.build()
         
         
     return qpca
         
+
+def plot_pixel_disorder(qpca):
+    
+    L, W = qpca.L, qpca.W
+    
+    a = 3000//W
+
+    pixel_size = 2*W//(3*7)
+    gap_size = pixel_size // 4
+    channel_halfwidth = 3*pixel_size//2+2*gap_size
+    channel_halflength = channel_halfwidth-gap_size
+
+    dL = 2*gap_size+3*pixel_size-2*channel_halflength
+    dW = 4*gap_size+3*pixel_size-2*channel_halfwidth
+    
+    fig,ax=plt.subplots()
+    h = ax.imshow(qpca.disorder[L//2-channel_halflength:L//2+channel_halflength,
+                             W//2-channel_halfwidth+gap_size:W//2+channel_halfwidth-gap_size].T
+               , origin='lower')
+    plt.colorbar(h, label='potential [eV]', shrink=0.45)
+    plt.show()
+    
+    
+    pixel1 = qpca.disorder[L//2-channel_halflength: 
+              L//2-channel_halflength+pixel_size, 
+              W//2+channel_halfwidth-gap_size-pixel_size: 
+              W//2+channel_halfwidth-gap_size].flatten().mean()
+
+    pixel2 = qpca.disorder[L//2-channel_halflength+gap_size+pixel_size: 
+              L//2-channel_halflength+gap_size+2*pixel_size, 
+              W//2+channel_halfwidth-gap_size-pixel_size: 
+              W//2+channel_halfwidth-gap_size].flatten().mean()
+
+    pixel3 = qpca.disorder[L//2-channel_halflength+2*gap_size+2*pixel_size: 
+              L//2-channel_halflength+2*gap_size+3*pixel_size, 
+              W//2+channel_halfwidth-gap_size-pixel_size: 
+              W//2+channel_halfwidth-gap_size].flatten().mean()
+
+    pixel4 = qpca.disorder[L//2-channel_halflength: 
+              L//2-channel_halflength+pixel_size, 
+              W//2+channel_halfwidth-2*gap_size-2*pixel_size: 
+              W//2+channel_halfwidth-2*gap_size-pixel_size].flatten().mean()
+
+    pixel5 = qpca.disorder[L//2-channel_halflength+gap_size+pixel_size: 
+              L//2-channel_halflength+gap_size+2*pixel_size, 
+              W//2+channel_halfwidth-2*gap_size-2*pixel_size: 
+              W//2+channel_halfwidth-2*gap_size-pixel_size].flatten().mean()
+
+    pixel6 = qpca.disorder[L//2-channel_halflength+2*gap_size+2*pixel_size: 
+              L//2-channel_halflength+2*gap_size+3*pixel_size, 
+              W//2+channel_halfwidth-2*gap_size-2*pixel_size: 
+              W//2+channel_halfwidth-2*gap_size-pixel_size].flatten().mean()
+
+    pixel7 = qpca.disorder[L//2-channel_halflength: 
+              L//2-channel_halflength+pixel_size, 
+              W//2+channel_halfwidth-3*gap_size-3*pixel_size: 
+              W//2+channel_halfwidth-3*gap_size-2*pixel_size].flatten().mean()
+
+    pixel8 = qpca.disorder[L//2-channel_halflength+gap_size+pixel_size: 
+              L//2-channel_halflength+gap_size+2*pixel_size, 
+              W//2+channel_halfwidth-3*gap_size-3*pixel_size: 
+              W//2+channel_halfwidth-3*gap_size-2*pixel_size].flatten().mean()
+
+    pixel9 = qpca.disorder[L//2-channel_halflength+2*gap_size+2*pixel_size: 
+              L//2-channel_halflength+2*gap_size+3*pixel_size, 
+              W//2+channel_halfwidth-3*gap_size-3*pixel_size: 
+              W//2+channel_halfwidth-3*gap_size-2*pixel_size].flatten().mean()
+    
+    plt.figure()
+    plt.imshow([[pixel1, pixel2, pixel3],[pixel4, pixel5, pixel6],[pixel7, pixel8, pixel9]])
+    plt.show()
 
 
 def generate_polynomials(x,params):

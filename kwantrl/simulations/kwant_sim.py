@@ -17,7 +17,7 @@ from math import atan2, pi, sqrt
 from cmath import exp
 import scipy.linalg as la
 from scipy.constants import physical_constants
-from scipy.fft import fft2, ifft2, fftfreq
+from scipy.fftpack import fft2, ifft2, fftfreq
 
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
@@ -25,7 +25,7 @@ from matplotlib.patches import Rectangle
 
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
-from shapely.plotting import plot_polygon, plot_points
+#from shapely.plotting import plot_polygon, plot_points
 from scipy.interpolate import griddata
 import cProfile
 import time
@@ -179,6 +179,8 @@ class KwantChip():
         self.voltages = {}
         self.gate_potentials = {}
         self.disorder = np.zeros((self.L, self.W))
+        self.dis_ls = None
+        self.dis_magn = None
         
         self.gate_shapes = {"Polygons": [], "Rectangles": []}
         
@@ -222,6 +224,8 @@ class KwantChip():
         self.gate_shapes["Polygons"].append(polygon)
         
     def make_disorder(self, magnitude, length_scale,random_seed=42):
+        self.dis_ls = length_scale
+        self.dis_magn = magnitude
         rng=np.random.RandomState(random_seed)
         
         lsteps = np.array([self.L // i for i in range(1, self.L+1)])
@@ -241,6 +245,9 @@ class KwantChip():
         
     
     def make_fourier_disorder(self, magnitude, length_scale, smoother='exponential', random_seed=42):
+        self.dis_ls = length_scale
+        self.dis_magn = magnitude
+
         rng=np.random.RandomState(random_seed)
         disorder=rng.uniform(-1,1,size=(self.L,self.W))
         
@@ -251,11 +258,11 @@ class KwantChip():
         ft_dis = fft2(disorder)
         
         if smoother=='exponential':
-            disorder = np.real(ifft2(ft_dis*np.exp(-2*np.sqrt(Qx**2+Qy**2)*length_scale)))
+            disorder = np.real(ifft2(ft_dis*np.exp(-2*np.pi*np.sqrt(Qx**2+Qy**2)*length_scale)))
         elif smoother=='gaussian':
-            disorder = np.real(ifft2(ft_dis*np.exp(-2*(Qx**2+Qy**2)*length_scale**2)))
+            disorder = np.real(ifft2(ft_dis*np.exp(-2*np.pi*(Qx**2+Qy**2)*length_scale**2)))
         elif smoother=='hard':
-            disorder = np.real(ifft2(np.where(Qx**2+Qy**2 < (1/length_scale)**2, ft_dis, 0)))
+            disorder = np.real(ifft2(np.where(Qx**2+Qy**2 < (1/(2*np.pi*length_scale))**2, ft_dis, 0)))
         
         self.disorder = magnitude*disorder/np.max(np.abs(disorder))
         

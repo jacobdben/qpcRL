@@ -75,6 +75,7 @@ def parallel_cma(func_to_minimize,function_args, starting_point, sigma=0.5,optio
     #start a datadict and measure the starting point, cma-es for some reason doesnt measure the starting point
     cmaesdata = CmaesData()
     starting_results = par_func_to_minimize(starting_point)[0]
+    print("Unoptimised score:", starting_results)
     cmaesdata.add(0, starting_point, starting_results)
 
     if options == None:

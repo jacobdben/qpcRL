@@ -10,8 +10,8 @@ import numpy as np
 from simulations.kwant_sim import KwantChip
 from lossfunctions.staircasiness import *
 from optimization.fourier.fourier_modes_hardcoded import fourier_to_potential 
-from optimization.newpoint import new_point_array
 from os import cpu_count
+from time import time_ns
 
 
 
@@ -98,7 +98,7 @@ def initialise_device(L=200, W=150, dis=None):
 
     if dis != None:
         Ud, ls = dis
-        qpca.make_fourier_disorder(Ud, ls, random_seed=142)
+        qpca.make_fourier_disorder(Ud, ls, random_seed=int(str(time_ns())[-9:])) # Debug: random_seed=142
 
     qpca.build()
         

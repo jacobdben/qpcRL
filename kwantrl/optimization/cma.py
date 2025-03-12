@@ -9,6 +9,8 @@ import os
 import json
 import pickle
 
+
+################## DATA HANDLING ##################
 def save_es(es,folder):
     string=es.pickle_dumps()
     with open(folder+'saved_es.pkl','wb') as file:
@@ -52,11 +54,18 @@ class CmaesData():
         return datadict
 
 
+
+
+################## CMA-ES ALGORITHM ##################
+
+
+
+
 def parallel_cma(func_to_minimize,function_args, starting_point, sigma=0.5,options=None):
 
     
+    # Location to save files
     savefolder = 'outcmaes/'
-
     if 'outcmaes' in listdir():
         nruns = len(listdir('outcmaes/'))
         if nruns > 0:
@@ -70,14 +79,15 @@ def parallel_cma(func_to_minimize,function_args, starting_point, sigma=0.5,optio
         mkdir(savefolder)
 
 
-    par_func_to_minimize=partial(func_to_minimize,**function_args)
+    par_func_to_minimize=partial(func_to_minimize,**function_args) # Wrapper for function to minimise
     
-    #start a datadict and measure the starting point, cma-es for some reason doesnt measure the starting point
+    # Start a datadict and measure the starting point, cma-es for some reason doesnt measure the starting point
     cmaesdata = CmaesData()
     starting_results = par_func_to_minimize(starting_point)[0]
     print("Unoptimised score:", starting_results)
     cmaesdata.add(0, starting_point, starting_results)
 
+    # Default options
     if options == None:
         options={'timeout':24*60*60,'popsize':cpu_count()}
 
@@ -90,9 +100,13 @@ def parallel_cma(func_to_minimize,function_args, starting_point, sigma=0.5,optio
     
     
     iteration=1
+    
+    # Loop until one of stop criteria are met
     while not es.stop(ignore_list=['tolfun']):
-        solutions=es.ask()
         
+        solutions=es.ask() # Draw candidate configurations
+        
+        # Parallelise loss evaluation
         with ProcessPoolExecutor(cpu_count()) as executor:
             results = list(executor.map(par_func_to_minimize, solutions))
             results = [result[0] for result in results]
@@ -102,7 +116,7 @@ def parallel_cma(func_to_minimize,function_args, starting_point, sigma=0.5,optio
                 cmaesdata.add(iteration, solutions[i], results[i])
         
 
-        es.tell(solutions,results)
+        es.tell(solutions,results) # Rank candidate configurations
         es.logger.add()
         es.disp()
         iteration+=1

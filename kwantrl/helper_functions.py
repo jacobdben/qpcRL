@@ -17,29 +17,31 @@ from time import time_ns
 
 def initialise_device(L=200, W=150, dis=None):
     
-    a = 3000//W
+    a = 3000//W # Lattice spacing
 
-    pixel_size = 2*W//(3*7)
-    gap_size = pixel_size // 4
-    channel_halfwidth = 3*pixel_size//2+2*gap_size
-    channel_halflength = channel_halfwidth-gap_size
+    pixel_size = 2*W//(3*7) # Pixel size
+    gap_size = pixel_size // 4 # Gap between pixels
+    channel_halfwidth = 3*pixel_size//2+2*gap_size # Half distance between split gates
+    channel_halflength = channel_halfwidth-gap_size # Half the split gate channel length
 
     dL = 2*gap_size+3*pixel_size-2*channel_halflength
     dW = 4*gap_size+3*pixel_size-2*channel_halfwidth
 
 
-    qpca = KwantChip(length=L, width=W, a=a, continuum=False)
+    qpca = KwantChip(length=L, width=W, a=a, continuum=False) # Make KwantChip object
 
 
 
-    Vg = -3
-    Vp = -0
+    Vg = -3 # Split gate voltages
+    Vp = -0 # Pixel gate starting voltages
+    
+    # Add split gates
     qpca.add_rect_gate([L//2-channel_halflength, L//2+channel_halflength+dL, 
                         -10*W, W//2-channel_halfwidth-dW], dist=200, V=Vg, gate_name='Vg1')
     qpca.add_rect_gate([L//2-channel_halflength, L//2+channel_halflength+dL, 
                         W//2+channel_halfwidth, 11*W], dist=200, V=Vg, gate_name='Vg2')
 
-
+    # Define pixel rectangles
     pixel1 = [L//2-channel_halflength, 
               L//2-channel_halflength+pixel_size, 
               W//2+channel_halfwidth-gap_size-pixel_size, 
@@ -85,6 +87,7 @@ def initialise_device(L=200, W=150, dis=None):
               W//2+channel_halfwidth-3*gap_size-3*pixel_size, 
               W//2+channel_halfwidth-3*gap_size-2*pixel_size]
 
+    # Add pixel gates
     qpca.add_rect_gate(pixel1, dist=200, V=Vp, gate_name='Vp1')
     qpca.add_rect_gate(pixel2, dist=200, V=Vp, gate_name='Vp2')
     qpca.add_rect_gate(pixel3, dist=200, V=Vp, gate_name='Vp3')
@@ -95,9 +98,10 @@ def initialise_device(L=200, W=150, dis=None):
     qpca.add_rect_gate(pixel8, dist=200, V=Vp, gate_name='Vp8')
     qpca.add_rect_gate(pixel9, dist=200, V=Vp, gate_name='Vp9')
 
-
+    
     if dis != None:
         Ud, ls = dis
+        # Make disorder
         qpca.make_fourier_disorder(Ud, ls, random_seed=int(str(time_ns())[-9:])) # Debug: random_seed=142
 
     qpca.build()

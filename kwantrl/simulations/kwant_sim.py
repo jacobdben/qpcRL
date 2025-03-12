@@ -34,7 +34,7 @@ import warnings
 
 
 
-
+# Define physical constants
 hbar = physical_constants['Planck constant over 2 pi'][0] 
 m_e = physical_constants['electron mass'][0]
 eV = physical_constants['electron volt'][0] # electronovolt expressed in Joules
@@ -68,78 +68,6 @@ def rectangular_gate_pot(rectangle, dist, a=1):
 
 
 
-
-
-def polygon_gate_pot(polygon, dist, a=1):
-    """Compute the potential of a polygon gate.
-    
-    polygon: a Polygon object
-    
-    dist: The gate hovers at the given distance over the plane where the
-          potential is evaluated.
-    
-    Based on J. Appl. Phys. 77, 4504 (1995)
-    http://dx.doi.org/10.1063/1.359446
-    """
-    vertices = list(polygon.exterior.coords)
-    def func(x, y):
-
-        # Deal with corner cases
-        if (x, y) in vertices:
-            
-            corner = 0
-            count = 0
-            
-            for i in [-1, 1]:
-                for j in [-1, 1]:
-                    if (x+i, y+j) not in vertices:
-                        count+=1
-                        corner += func(x+i, y+j)
-            
-            return corner/count
-        
-        
-        res = 2*np.pi*int(polygon.contains(Point(x, y)))
-        
-        N = len(vertices)
-
-        for i in range(N-1):
-            
-            point_a = vertices[i]
-            point_b = vertices[i+1]
-            
-            ab = np.array([point_b[0]-point_a[0], point_b[1]-point_a[1]])
-            ba = np.array([point_a[0]-point_b[0], point_a[1]-point_b[1]])
-            ar = np.array([x-point_a[0], y-point_a[1]])
-            br = np.array([x-point_b[0], y-point_b[1]])
-            n = np.array([ab[1], -ab[0]])/np.linalg.norm(np.array([ab[1], -ab[0]]))
-            
-            # Set sign of n so i points out of polygon
-            eps = 0.001
-            ab_line_centre = (np.array(point_a)+np.array(point_b))/2
-            n *= (-1)**(int(polygon.contains(Point(ab_line_centre + eps*n))))
-            
-            l1 = ar @ ab/np.linalg.norm(ab)
-            l2 = br @ ba/np.linalg.norm(ba)
-            H = ar @ n
-            R1 = np.sqrt((H*a)**2 + dist**2 + (l1*a)**2)
-            R2 = np.sqrt((H*a)**2 + dist**2 + (l2*a)**2)
-            
-            arg1, arg2 = None, None
-
-            # Take care of edge-cases            
-            if abs(H) < 1e-10:
-                arg1 = np.sign(l1)*np.inf
-                arg2 = np.sign(l2)*np.inf
-            else:
-                arg1 = dist*l1/(H*R1)
-                arg2 = dist*l2/(H*R2)
-            
-            res+=np.arctan(arg1)+np.arctan(arg2)
-
-
-        return res/(2*np.pi)
-    return func
         
 
 
@@ -192,6 +120,14 @@ class KwantChip():
         
 
     def add_rect_gate(self, rectangle, dist, V=0.0, gate_name=None):
+        """
+        Adds a rectangular gate.
+        
+        rectangle (list): rectangle geometry
+        dist (float): distance the gate lies above the 2DEG
+        V (float): voltage on gate
+        gate_name ("string"): gate label
+        """
         
         
         if gate_name==None:
@@ -206,45 +142,18 @@ class KwantChip():
         self.gate_potentials[gate_name]=potential
         self.voltages[gate_name] = V
         self.gate_shapes["Rectangles"].append(rectangle)
-     
-        
-    def add_polygon_gate(self, polygon, dist, V=0.0, gate_name=None):
-            
-        if gate_name==None:
-            gate_name = 'V' + str(len(self.voltages))
-            
-        potential = np.zeros((self.L, self.W))
-            
-        for x in range(self.L):
-            for y in range(self.W):
-                potential[x,y] = polygon_gate_pot(polygon, dist, self.a)(x,y)
-        
-        self.gate_potentials[gate_name]=potential
-        self.voltages[gate_name] = V
-        self.gate_shapes["Polygons"].append(polygon)
-        
-    def make_disorder(self, magnitude, length_scale,random_seed=42):
-        self.dis_ls = length_scale
-        self.dis_magn = magnitude
-        rng=np.random.RandomState(random_seed)
-        
-        lsteps = np.array([self.L // i for i in range(1, self.L+1)])
-        wsteps = np.array([self.W // i for i in range(1, self.W+1)])
-        
-        xs=np.arange(start=0,stop=self.L+1,step=lsteps[np.argmin(abs(lsteps-length_scale))])
-        ys=np.arange(start=0,stop=self.W+1,step=wsteps[np.argmin(abs(wsteps-length_scale))])
-        XS,YS=np.meshgrid(xs,ys,indexing='ij')
-        points=np.array([XS.flatten(),YS.flatten()]).T
-        disorder=rng.uniform(-1,1,size=(len(xs),len(ys)))
-                
-        grid_x,grid_y=np.meshgrid(np.arange(self.L),np.arange(self.W),indexing='ij')
-        
-        disorder_int=griddata(points,disorder.flatten(),(grid_x,grid_y),method='cubic')
-    
-        self.disorder = magnitude*np.nan_to_num(disorder_int)
-        
+          
     
     def make_fourier_disorder(self, magnitude, length_scale, smoother='exponential', random_seed=42):
+        """
+        Makes the disorder potential
+        
+        magnitude (float): disorder magnitude
+        length_scale (int): disorder length scale in number of lattice sites
+        smoother (string): smoothing kernel for noise correlation
+        random_seed (float): random seed
+        """
+        
         self.dis_ls = length_scale
         self.dis_magn = magnitude
 
@@ -270,6 +179,9 @@ class KwantChip():
 
     
     def get_potential(self, x, y):
+        """
+        Get the electrostatic potential with disorder at location (x,y)
+        """
         if self.continuum:
             x, y = int(x/self.a), int(y/self.a)
 
@@ -277,6 +189,9 @@ class KwantChip():
             - self.disorder[x,y]
     
     def set_gate(self, name, voltage):
+        """
+        Set voltage of gate for the given label
+        """
         assert(name in self.voltages.keys())
         self.voltages[name] = voltage
     
@@ -287,6 +202,9 @@ class KwantChip():
         return -self.t
     
     def build_tb(self):
+        """
+        Builds tightbinding model
+        """
         
         # On site effects
         self.sys[(self.lat(x, y) for x in range(self.L) for y in range(self.W))] = self.onsite
@@ -314,6 +232,9 @@ class KwantChip():
         return (0 <= y < self.W)
 
     def build_ema(self):
+        """
+        Builds tightbinding model from continuum model using KWANT's continuum functionality
+        """
         
         if self.energy > self.t:
             print(self.t)
@@ -341,6 +262,9 @@ class KwantChip():
             self.build_tb()
     
     def transmission(self):
+        """
+        Calculate transmission for the system
+        """
         params={k:self.__dict__[k] for k in ['energy', 'voltages']}
         params['U'] = self.get_potential
         params['h'] = physical_constants['Planck constant over 2 pi'][0]
@@ -350,6 +274,10 @@ class KwantChip():
         return smatrix.transmission(1,0)
     
     def density(self, lead_nr):
+        """
+        Get state density
+        """
+    
         params={k:self.__dict__[k] for k in ['energy', 'voltages']}
         params['U'] = self.get_potential
         params['h'] = physical_constants['Planck constant over 2 pi'][0]

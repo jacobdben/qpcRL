@@ -129,3 +129,12 @@ class staircasiness():
         return 1/loss
 
 
+    def stair_loss_simple(self, staircase):
+        res=0
+        for i in range(len(staircase)-1):
+              res+=np.cbrt(np.abs(staircase[i+1]-staircase[i])+0.01)
+        
+        P_not_zeros=len(np.where(staircase>1e-5)[0])/len(staircase)
+        
+        return res/(P_not_zeros+1)
+

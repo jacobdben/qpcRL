@@ -61,21 +61,20 @@ class CmaesData():
 
 
 
-def parallel_cma(func_to_minimize,function_args, starting_point, sigma=0.5,options=None):
+def parallel_cma(func_to_minimize,function_args, starting_point, sigma=0.5,options=None, savefolder = 'outcmaes'):
 
     
     # Location to save files
-    savefolder = 'outcmaes/'
-    if 'outcmaes' in listdir():
-        nruns = len(listdir('outcmaes/'))
+    if savefolder in listdir():
+        nruns = len(listdir(savefolder))
         if nruns > 0:
-            savefolder += 'run_' + str(nruns+1) +'/'
+            savefolder += '/run_' + str(nruns+1) +'/'
         else:
-            savefolder += 'run_1/'
+            savefolder += '/run_1/'
         mkdir(savefolder)
     else:
-        savefolder += 'run_1/'
-        mkdir('outcmaes/')
+        mkdir(savefolder)
+        savefolder += '/run_1/'
         mkdir(savefolder)
 
 

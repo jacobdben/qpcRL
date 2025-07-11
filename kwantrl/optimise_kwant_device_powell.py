@@ -163,7 +163,7 @@ NM_options={'maxiter':100}
 
 # Run parallelised CMA
 start = time.time()
-powell(func_to_optimize,function_args=kwargs, starting_point=start_point, runid=runid, sigma=0.5, options=NM_options, savefolder='NM_paper_results')
+powell(func_to_optimize,function_args=kwargs, starting_point=start_point, runid=runid, sigma=0.5, options=NM_options, savefolder='powell_paper_results')
 end = time.time()
 length = end - start
 print("It took", length, "seconds!")

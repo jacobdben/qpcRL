@@ -64,7 +64,7 @@ def make_tracked_objective(f):
         return f(x)
     return wrapped
 
-def powell(func_to_minimize,function_args, starting_point, runid, sigma=0.5,options=None, savefolder = 'NM_paper_results'):
+def powell(func_to_minimize,function_args, starting_point, runid, sigma=0.5,options=None, savefolder = 'powell_paper_results'):
     
     
     # Location to save files

@@ -15,7 +15,7 @@ from time import time_ns
 
 
 
-def initialise_device(L=200, W=150, dis=None):
+def initialise_device(L=200, W=150, dis=None, dseed=None):
     
     a = 3000//W # Lattice spacing
 
@@ -102,7 +102,10 @@ def initialise_device(L=200, W=150, dis=None):
     if dis != None:
         Ud, ls = dis
         # Make disorder
-        qpca.make_fourier_disorder(Ud, ls, random_seed=int(str(time_ns())[-9:])) # Debug: random_seed=142
+        if dseed != None:
+            qpca.make_fourier_disorder(Ud, ls, random_seed=dseed) 
+        else:
+            qpca.make_fourier_disorder(Ud, ls, random_seed=int(str(time_ns())[-9:])) # Debug: random_seed=142
 
     qpca.build()
         

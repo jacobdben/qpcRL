@@ -1,26 +1,78 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Oct 11 10:35:11 2023
+Created on Wed Jul  9 14:34:50 2025
 
 @author: jacob
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 from os import cpu_count
 import sys
 from lossfunctions.staircasiness import staircasiness
 from optimization.newpoint import simple_new_point 
-from optimization.cma import parallel_cma
+from optimization.nelder_mead import nelder_mead
 from helper_functions import generate_polynomials, fourier_polynomials_to_voltages, initialise_device
+from functools import partial
+from concurrent.futures import ProcessPoolExecutor
+import time
 
 
-
-
-
-
+def set_qpca_voltages(vs, qpc):
+    qpc.set_gate('Vp1', vs[0])
+    qpc.set_gate('Vp2', vs[1])
+    qpc.set_gate('Vp3', vs[2])
+    qpc.set_gate('Vp4', vs[3])
+    qpc.set_gate('Vp5', vs[4])
+    qpc.set_gate('Vp6', vs[5])
+    qpc.set_gate('Vp7', vs[6])
+    qpc.set_gate('Vp8', vs[7])
+    qpc.set_gate('Vp9', vs[8])
+    return qpc.transmission()
+    
 def func_to_optimize(X, common_mode, qpca, order, bounds, loss_function):
+    """
+    X: An array of shape (8*n, ) containing the parameters to tune using cmaes. 
+       This corresponds to 8 Fourier coefficients as n-order polynomials of the
+       ninth Fourier coefficient a0 (pixel average).
+    
+    common_mode: array of Fourier coefficient to sweep
+    
+    qpca: KwantChip object
+    
+    order: polynomial order
+    
+    bounds: constraints on the pixel voltages
+    
+    loss_func: loss function 
+    
+    """
+    
+    
+    X = X.reshape(order, -1)
+    penalty = 0
+    pfac = 100
+
+    # Convert fourier modes to corresponding voltages to be swept
+    polynomials = generate_polynomials(np.linspace(0,1,len(common_mode)), X) 
+    voltages = np.array(fourier_polynomials_to_voltages(polynomials,vals=common_mode))
+
+    v_p = [simple_new_point(voltages[:,i], bounds) for i in range(9)]
+    voltages = np.array([v_p[i][0] for i in range(9)]).T
+    penalty = sum([v_p[i][1] for i in range(9)])
+    
+    Gs = [] # Define list of conductances
+    
+    f = partial(set_qpca_voltages, qpc=qpca)
+    
+    with ProcessPoolExecutor() as executor:
+        Gs = np.array(list(executor.map(f, voltages)))
+    
+
+    # Return loss for the conductance curve, in addition to returning the conductances themselves
+    return loss_function(np.array(Gs))+pfac*penalty
+
+def func_to_optimize_old(X, common_mode, qpca, order, bounds, loss_function):
     """
     X: An array of shape (8*n, ) containing the parameters to tune using cmaes. 
        This corresponds to 8 Fourier coefficients as n-order polynomials of the
@@ -72,9 +124,10 @@ def func_to_optimize(X, common_mode, qpca, order, bounds, loss_function):
     
 
     # Return loss for the conductance curve, in addition to returning the conductances themselves
-    return loss_function(np.array(Gs))+pfac*penalty, Gs
+    return loss_function(np.array(Gs))+pfac*penalty
     
-print("CMA-ES", flush=True)
+print("Nelder-Mead", flush=True)
+
 # By default, no disorder added
 disorder = None
 runid = sys.argv[1]
@@ -97,6 +150,7 @@ common_voltages = np.linspace(-1.75, 0, 100) # Define average pixel voltage valu
 
 order=1
 start_point=np.zeros(shape=(order,8)).ravel()
+print("Start point:", start_point)
 
 voltage_bounds = (-3,1) # Range of allowed voltages to use
 
@@ -105,8 +159,11 @@ kwargs={'common_mode':common_voltages,'qpca':qpca,'order':order,
         'loss_function':stairs.stair_loss_simple,'bounds':voltage_bounds}
 
 
-cma_options={'timeout':1*24*60*60,'popsize':cpu_count(), 'maxiter':150}
+NM_options={'maxiter':100}
 
 # Run parallelised CMA
-parallel_cma(func_to_optimize,function_args=kwargs, starting_point=start_point, runid=runid, sigma=0.5, options=cma_options, savefolder='outcmaes_paper_results')
-
+start = time.time()
+nelder_mead(func_to_optimize,function_args=kwargs, starting_point=start_point, runid=runid, sigma=0.5, options=NM_options, savefolder='NM_paper_results')
+end = time.time()
+length = end - start
+print("It took", length, "seconds!")

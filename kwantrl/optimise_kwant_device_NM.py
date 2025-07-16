@@ -141,7 +141,7 @@ if len(sys.argv)>2:
 print("CPUs available:", cpu_count(), flush=True)
 print("Disorder:", disorder, flush=True)
 
-qpca = initialise_device(L=500, W=300, dis=disorder, dseed=142) # Initialises our 3x3 pixel qpc device simulated in KWANT
+qpca = initialise_device(L=500, W=300, dis=disorder, dseed=777) # Initialises our 3x3 pixel qpc device simulated in KWANT
 print("Disorder size:", qpca.dis_ls)
 
 stairs=staircasiness() # Initialize staircase loss object

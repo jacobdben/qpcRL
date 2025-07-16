@@ -97,13 +97,13 @@ def powell(func_to_minimize,function_args, starting_point, runid, sigma=0.5,opti
         current_iter_count[0] = 0
 
   
-    # Run optimization with Nelder-Mead and tracking
+    # Run optimization with Powell and tracking
     result = minimize(
         make_tracked_objective(objective),
         starting_point,
         method='Powell',
         callback=callback,
-        options={'return_all': True, 'disp': True, 'maxiter':options['maxiter']}
+        options={'return_all': True, 'disp': True, 'maxiter':options['maxiter'], 'maxfev':options['maxfev']}
     )
     
     for i, val in enumerate(function_values):

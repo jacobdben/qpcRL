@@ -88,7 +88,7 @@ if len(sys.argv)>2:
 print("CPUs available:", cpu_count(), flush=True)
 print("Disorder:", disorder, flush=True)
 
-qpca = initialise_device(L=500, W=300, dis=disorder, dseed=142) # Initialises our 3x3 pixel qpc device simulated in KWANT
+qpca = initialise_device(L=500, W=300, dis=disorder, dseed=777) # Initialises our 3x3 pixel qpc device simulated in KWANT
 print("Disorder size:", qpca.dis_ls)
 
 stairs=staircasiness() # Initialize staircase loss object
@@ -105,7 +105,7 @@ kwargs={'common_mode':common_voltages,'qpca':qpca,'order':order,
         'loss_function':stairs.stair_loss_simple,'bounds':voltage_bounds}
 
 
-cma_options={'timeout':1*24*60*60,'popsize':cpu_count(), 'maxiter':150}
+cma_options={'timeout':1*24*60*60,'popsize':10, 'maxiter':150}
 
 # Run parallelised CMA
 parallel_cma(func_to_optimize,function_args=kwargs, starting_point=start_point, runid=runid, sigma=0.5, options=cma_options, savefolder='outcmaes_paper_results')

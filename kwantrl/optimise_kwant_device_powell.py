@@ -141,7 +141,7 @@ if len(sys.argv)>2:
 print("CPUs available:", cpu_count(), flush=True)
 print("Disorder:", disorder, flush=True)
 
-qpca = initialise_device(L=500, W=300, dis=disorder, dseed=142) # Initialises our 3x3 pixel qpc device simulated in KWANT
+qpca = initialise_device(L=500, W=300, dis=disorder, dseed=777) # Initialises our 3x3 pixel qpc device simulated in KWANT
 print("Disorder size:", qpca.dis_ls)
 
 stairs=staircasiness() # Initialize staircase loss object
@@ -159,11 +159,11 @@ kwargs={'common_mode':common_voltages,'qpca':qpca,'order':order,
         'loss_function':stairs.stair_loss_simple,'bounds':voltage_bounds}
 
 
-NM_options={'maxiter':100}
+powell_options={'maxiter':1000, 'maxfev': 2500}
 
 # Run parallelised CMA
 start = time.time()
-powell(func_to_optimize,function_args=kwargs, starting_point=start_point, runid=runid, sigma=0.5, options=NM_options, savefolder='powell_paper_results')
+powell(func_to_optimize,function_args=kwargs, starting_point=start_point, runid=runid, sigma=0.5, options=powell_options, savefolder='powell_paper_results')
 end = time.time()
 length = end - start
 print("It took", length, "seconds!")

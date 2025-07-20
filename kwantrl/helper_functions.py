@@ -105,7 +105,7 @@ def initialise_device(L=200, W=150, dis=None, dseed=None):
         if dseed != None:
             qpca.make_fourier_disorder(Ud, ls, random_seed=dseed) 
         else:
-            qpca.make_fourier_disorder(Ud, ls, random_seed=int(str(time_ns())[-9:])) # Debug: random_seed=142
+            qpca.make_fourier_disorder(Ud, ls, random_seed=int(str(time_ns())[-9:]))
 
     qpca.build()
         
